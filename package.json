@@ -1,0 +1,29 @@
+{
+    "name": "dynamotest",
+    "version": "0.0.1",
+    "description": "a simple test to learn dynamo db.",
+    "main": "dynamotest.js",
+    "scripts": {
+        "test": "node --harmony"
+    },
+    "keywords": [
+        "node",
+        "dynamo",
+        "temp"
+    ],
+    "author": "Evan Boucher",
+    "license": "ISC",
+    "dependencies": {
+        "aws-sdk": "^2.2.12",
+        "co": "^4.6.0",
+        "install": "^0.1.8",
+        "joi": "^6.5.0",
+        "koa": "^1.1.0",
+        "npm": "^3.3.8",
+        "q": "^1.4.1",
+        "winston": "^1.1.1"
+    },
+    "devDependencies": {
+        "eslint": "^1.7.3"
+    }
+}
