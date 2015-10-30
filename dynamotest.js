@@ -220,7 +220,7 @@ function putItem(data) {
 
 co(function* putItemGenerator() {
     //Describe the table.
-    var res = yield dynaDoc.describeTable(TABLE_NAME);
+    //var res = yield dynaDoc.describeTable(TABLE_NAME);
     var res = yield dynaDoc.describeTable(TABLE_NAME + "Delete");
     /*
     console.log('Put item is about to be called.')
@@ -253,12 +253,30 @@ co(function* putItemGenerator() {
     */
 
     console.log('About to do a Query on example5 Timestamp index.')
-    var query = yield dynaDoc.queryOne("Timestamp-index", "#tkey = :hkey", {":hkey":"2015-08-11T21:32:34.338Z"}, {"#tkey":"Timestamp"});
-    console.log(JSON.stringify(query, null, 3));
+    //var query = yield dynaDoc.queryOne("Timestamp-index", "#tkey = :hkey", {":hkey":"2015-08-11T21:32:34.338Z"}, {"#tkey":"Timestamp"});
+    //console.log(JSON.stringify(query, null, 3));
     console.log('Query item is now done.\n');
 
     console.log('Using Smart query!');
-    var smartQuery = yield dynaDoc.smartQuery("GlobalSecondary-index","TestingHash", "RangeTest", "=");
+    var smartQuery = yield dynaDoc.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange", "=");
+    //var smartQuery = yield dynaDoc.smartQuery("Primary","TestingHash", "RangeTest", "=");
+
+    console.log(JSON.stringify(smartQuery, null, 3));
+    smartQuery = yield dynaDoc.smartQuery("LocalSecondaryIndex-index","PrimaryHashTest", "SecondaryIndex");
+    console.log(JSON.stringify(smartQuery, null, 3));
+
+    console.log('Testing Primary Key with Hash and Range!!!!')
+    smartQuery = yield dynaDoc.smartQuery("PrimaryIndex","PrimaryHashTest", 1);
+    console.log(JSON.stringify(smartQuery, null, 3));
+    console.log('DDDOOONNNNEEEE: Testing Primary Key with Hash and Range!!!!')
+    //A table change so we can parse the table (maybe it should save the previous table?)
+    var res = yield dynaDoc.describeTable(TABLE_NAME);
+    //Get an item by a global secondary index.
+    smartQuery = yield dynaDoc.smartQuery("Timestamp-index","2015-08-11T21:32:34.338Z");
+    console.log(JSON.stringify(smartQuery, null, 3));
+
+    smartQuery = yield dynaDoc.smartQuery("PrimaryIndex","example7");
+    console.log(JSON.stringify(smartQuery, null, 3));
     console.log('Smart query returned!');
     return res;
 });

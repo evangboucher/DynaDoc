@@ -50,9 +50,10 @@ function DynaDoc(AWS, tableName) {
     For simplicity.
     @TODO Add validation to params.
     */
-    this.TABLE_NAME = tableName;
+
     this.dynadoc = {};
     this.settings = DEFAULT_SETTINGS;
+    this.settings.TableName = tableName;
 }
 
 /*
@@ -71,10 +72,10 @@ Settings passed in at creation.
 */
 function generatePayload() {
     console.log('GeneratePayload Entered.');
-    console.log('this.TableName: ' + this.TABLE_NAME);
+    console.log('this.TableName: ' + this.settings.TableName);
     var payload = {};
     //Table name is always specified and is required!
-    payload.TableName = this.TABLE_NAME;
+    payload.TableName = this.settings.TableName;
 
     //Non required settings.
     payload.ReturnValues = 'ALL_OLD';
@@ -237,16 +238,39 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
 
         indexName: (String) The index name (typically ending in '-index')
         hashValue: The value for the hash in whatever datatype the index hash is in.
-        rangeValue: The range value for the index to compare or search for.
-        action: An action to take on the Range value. Examples: "<", "=", ">=", etc.
+        rangeValue: The range value for the index to compare or search for. (Optional)
+        action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
 
         @TODO Work in the Settings object to make smart queries.
+        @TODO Add the option to use 'Limit' in the query (limits the number of results).
+        @TODO Support BETWEEN calls (two range values).
+        
     */
-DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action) {
+DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit  ) {
+    var d = Q.defer();
     var payload = generatePayload.call(this);
     //Lets generate the response for them with these values.
-    createSmartPayload(payload, this.settings,  indexName, hashValue, rangeValue, action);
+    if (arguments.length === 2) {
+        //Pass null in so it will skip the range value.
+        createSmartPayload(payload, this.settings,  indexName, hashValue, null, null);
+    } else if(arguments.length === 3) {
+        //Pass null in so it will skip the range value.
+        createSmartPayload(payload, this.settings,  indexName, hashValue, rangeValue, null);
+    } else if (arguments.length >= 4){
+        //All arguments provided so we parse it like normal.
+        createSmartPayload(payload, this.settings,  indexName, hashValue, rangeValue, action);
 
+    } else {
+        //We should throw some error because the user is miss using the function.
+        throw new Error('Not enough arguments for smartQuery!');
+        return; //To make sure we do not continue.
+    }
+
+    this.dynamoDoc.query(payload, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
 }
 
 /*
@@ -328,10 +352,19 @@ DynaDoc.prototype.describeTable = function* describeTable(tableName) {
 Creates a payload given the data from the user and describeTable method.
 Requires that you pass Settings and payload. It does not make any changes to Settings,
 but will add query keys to the payload.
+
+@TODO Need to make this so you do not have to use Range values (helpful)
+
+@TODO THis is awesome! However, generating this everytime for potentially similar queiries
+may be time wasteful. Simply being able to change the values for an existing query will be
+best!
+I believe this can be done by hashing the index name with the action, storing it in Another
+object, then referencing that object by hash when the same command appears again! This way,
+all we really have to do is change the ExpressionAttributeValues's values! :D
 */
 function createSmartPayload(payload, settings, indexName, hashValue, rangeValue, action) {
     console.log('Creating a smart payload for the user.');
-    //Lets create a payload.
+
 
     var Indexes = getIndexes(settings);
     var indexObject = Indexes[indexName];
@@ -355,25 +388,35 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
     var keyConditionExpression = "";
     //We need to check if this is a primary index or secondary.
     if (indexObject.isPrimary) {
-        //This is the primary index.
+        //This is the primary index then you do not specify an IndexName (default is primary!)
 
-    } else {
+    }else {
+        payload.IndexName = indexName;
+    }// else {
         //@TODO may be able to may this simpilier.
         hashNameString = "#HName" ; //+ indexObject.Hash.name
         hashValueString = ":HValue"; // + indexObject.Hash.name
-        rangeNameString = "#RName";// + indexObject.Range.name
-        rangeValueString = ":RValue";// + indexObject.Range.name
+
         //Generate the name expression attributes.
         expressionAttributeNames[hashNameString] = indexObject.Hash.name;
-        expressionAttributeNames[rangeNameString] = indexObject.Range.name;
-
-        //Generate their values.
         expressionAttributeValues[hashValueString] = hashValue;
-        expressionAttributeValues[rangeValueString] = rangeValue;
 
         //Now generate the keyConditionExpression.
-        keyConditionExpression = hashNameString + " = " + hashValueString + " and " + rangeNameString + " " + action + " " + rangeValueString;
-    }
+        keyConditionExpression = hashNameString + " = " + hashValueString;
+
+        //If we are also including a range value.
+        if (rangeValue) {
+            rangeNameString = "#RName";// + indexObject.Range.name
+            rangeValueString = ":RValue";// + indexObject.Range.name
+            expressionAttributeNames[rangeNameString] = indexObject.Range.name;
+            expressionAttributeValues[rangeValueString] = rangeValue;
+            if (!action) {
+                //No action was defined, so lets always use '='
+                action = "=";
+            }
+            keyConditionExpression += " and " + rangeNameString + " " + action + " " + rangeValueString;
+        }
+    //}
     payload.KeyConditionExpression = keyConditionExpression;
     payload.ExpressionAttributeValues = expressionAttributeValues;
     payload.ExpressionAttributeNames = expressionAttributeNames;
@@ -464,12 +507,9 @@ function parseAttributeDefinitions(settings, attributeDefinitionsArray) {
     //Given the attribute definitions array, lets go through and match it to our indexes.
     var temp = {};
     var Indexes = getIndexes(settings);
-    console.log('parseAttributeDefinitions: The Indexes Object is: ');
-    console.log(JSON.stringify(Indexes, null, 3));
     var attributeObject = convertAttributeDefinitionsToObject(attributeDefinitionsArray);
     //We need to pull out all the indexes and go through them.
     var topIndexNames = Object.keys(Indexes);
-    console.log('topIndexNames are: ' + topIndexNames);
     var tempIndexName = "";
     var tempObject = {};
     for (var i = 0; i < topIndexNames.length; i++) {
@@ -497,12 +537,6 @@ This will be a challenge, but would be an amazing feature.
 @TODO Create and implement the ability to check types for the Attribute definitions for indexes across the table.
 */
 function parseTableDescriptionResponse(settings, TableObject) {
-    console.log('parseing Table Description!');
-    console.log(JSON.stringify(TableObject, null, 4));
-    console.log('END PRINT STATEMENT FOR PARSE TABLE, NOT YET PARSED.');
-    console.log('Printing Settings object!');
-    console.log(JSON.stringify(settings, null, 4));
-    console.log('END PRINT STATEMENT FOR PARSE TABLE, NOT YET PARSED.');
     if (!TableObject) {
         console.log('ERROR: TableObject is not defined! No way to parse it!');
         return;
@@ -511,6 +545,9 @@ function parseTableDescriptionResponse(settings, TableObject) {
         return;
     }
     console.log('parseTableDescriptionResponse: All params are defined.');
+
+    //Make sure settings reflects this table name.
+    settings.TableName = TableObject.TableName;
 
     //Lets pull out the primary hash schema.
     //Array object to describe the primary key (hash with or without Range.) [0] is Primary, [1] is range
