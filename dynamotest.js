@@ -220,6 +220,7 @@ function putItem(data) {
 
 co(function* putItemGenerator() {
     //Describe the table.
+    var res = yield dynaDoc.describeTable(TABLE_NAME);
     var res = yield dynaDoc.describeTable(TABLE_NAME + "Delete");
     /*
     console.log('Put item is about to be called.')
@@ -255,6 +256,10 @@ co(function* putItemGenerator() {
     var query = yield dynaDoc.queryOne("Timestamp-index", "#tkey = :hkey", {":hkey":"2015-08-11T21:32:34.338Z"}, {"#tkey":"Timestamp"});
     console.log(JSON.stringify(query, null, 3));
     console.log('Query item is now done.\n');
+
+    console.log('Using Smart query!');
+    var smartQuery = yield dynaDoc.smartQuery("GlobalSecondary-index","TestingHash", "RangeTest", "=");
+    console.log('Smart query returned!');
     return res;
 });
 
