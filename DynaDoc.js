@@ -12,10 +12,9 @@ You can pass in a completed AWS object to initalize the client.
 I aim to make this library reusable and hope to make it into a
 seperate module.
 
-@TODO Valiidate all params that are passed in.
-@TODO Make Query smarter so user can use simple range queries.
+@TODO Make Update inteligent so it updates items specifically and conditionally.
 @TODO (Stretch) Make update smarter to identify like fields and update them.
-@TODO
+
 
 @author: Evan Boucher
 @copyright: Mohu Inc.
@@ -24,31 +23,44 @@ seperate module.
 
 //Q the promised library.
 var Q = require('q');
-
+//Validation library (Currently Not Used)
 var Joi = require('Joi');
+
+const PAYLOAD_HASH_NAME_KEY = "#hName";
+const PAYLOAD_HASH_VALUE_KEY = ":hValue";
+const PAYLOAD_RANGE_NAME_KEY = "#rName";
+const PAYLOAD_RANGE_VALUE_KEY = ":rValue";
+
+const PRIMARY_INDEX_PLACEHOLDER = "PrimaryIndex";
+
 /*
 Default settings for the DynaDoc module.
 */
-var DEFAULT_SETTINGS = {
+const DEFAULT_SETTINGS = {
     ReturnValues: 'NONE',
     ReturnConsumedCapacity: 'NONE',
     ReturnItemCollectionMetrics: 'NONE'
 
 }
 
-
 /*
 Constructor function.
 Params: The AWS SDK Client we are passed in the constructor.
 */
 function DynaDoc(AWS, tableName) {
+    if (!tableName) {
+        //The table name does not exist, so nothing will work.
+        throw new Error('DynaDoc: TableName is not defined.');
+    }
+    if (!AWS) {
+        throw new Error('DynaDoc: AWS is not defined.');
+    }
     this.dynamoDB = new AWS.DynamoDB();
     //We are passed the AWS client to create the DynamoDB Document Client.
     this.dynamoDoc = new AWS.DynamoDB.DocumentClient();
     /*
     The table name that this doc client will be accessing.
     For simplicity.
-    @TODO Add validation to params.
     */
 
     this.dynadoc = {};
@@ -61,7 +73,6 @@ Simple error checking to reuse some code.
 */
 function errorCheck(err, d) {
     if (err) {
-        console.log('Error in response from DynoDoc.');
         d.reject();
         throw err;
     }
@@ -71,63 +82,56 @@ A function that generates a generic payload from the
 Settings passed in at creation.
 */
 function generatePayload() {
-    console.log('GeneratePayload Entered.');
-    console.log('this.TableName: ' + this.settings.TableName);
+    if (!this.settings.TableName) {
+        //The table name does not exist, so nothing will work.
+        throw new Error('DynaDoc: TableName is not defined.');
+    }
     var payload = {};
     //Table name is always specified and is required!
     payload.TableName = this.settings.TableName;
 
     //Non required settings.
-    payload.ReturnValues = 'ALL_OLD';
-    payload.ReturnConsumedCapacity = 'TOTAL';
+    payload.ReturnValues = this.settings.ReturnValue || DEFAULT_SETTINGS.ReturnValue;
+    payload.ReturnConsumedCapacity = this.settings.ReturnConsumedCapacity || DEFAULT_SETTINGS.ReturnConsumedCapacity;
 
-    /*
-    @TODO Make sure that this.Table name exist and figure out Settings.
-    */
     return payload;
 }
 /*
 Settings for the DynaDoc client to use.
 
+This method does not change the TableName attribute.
+In order to change the TableName you will need to either create a
+new DynaDoc object or call describeTable with the new TableName.
+
+This ensures that settings are not confused (would cause problems for
+the smart query).
+
 userSettings: (Object) Specifies any setting that you want to set for every DynamoDB API call.
 */
-DynaDoc.prototype.settings = function* settings(userSettings) {
-    //Go through the settings object and pull them into our settings.
+DynaDoc.prototype.setSettings = function setSettings(userSettings) {
+    //Go through their user settings object and pull them into our settings.
     /*
     @TODO Ensure that the following is not a security issue (injections)
-    @TODO Try to figure out if there is a better way to do this.
     */
-    //See what type of Return value they want.
     /*
-    @TODO Return Value is limited in some calls such as Scan, Query, Get, CreateSet, batchWrite, batchGet
+    Return Value is limited in some calls such as Scan, Query, Get, CreateSet, batchWrite, batchGet
     Only usable in: Put, Update, and Delete.
     Need to check and make sure it is not sent otherwise DynamoDB will return validation Errors.
     */
-    if (userSettings.ReturnValue) {
-        this.settings.ReturnValue = userSettings.ReturnValue;
+    if (userSettings.ReturnValues) {
+        this.settings.ReturnValues = userSettings.ReturnValues;
     }
     //Check if they want to get Returned consumedCapacity
     /*
-    @TODO Availalbe in every method but CreateSet. Validate (not sure if CreateSet will be implemented or not).
+    Availalbe in every method but CreateSet. (CreateSet will likely not be implemented).
     */
     if (userSettings.ReturnConsumedCapacity) {
         this.settings.ReturnConsumedCapacity = userSettings.ReturnConsumedCapacity;
     }
-    //See if they are making a change to the Table Name.
-    if (userSettings.TableName) {
-        this.settings.TableName = userSettings.TableName;
-    }
-    //Save the primary index name.
-    if (userSettings.PrimaryIndexName) {
-        this.settings.PrimaryIndexName = userSettings.PrimaryIndexName;
-    }
-    //Save the primary Range key name.
-    if (userSettings.RangeIndexName) {
-        this.settings.RangeIndexName = userSettings.RangeIndexName;
-    }
+
     //Option to return Item collection Metrics.
     /*
-    @TODO Use only in: batchWrite, Put, Delete, and Update.
+    Use only in: batchWrite, Put, Delete, and Update.
     Not availalbe in other methods.
     */
     if (userSettings.ReturnItemCollectionMetrics) {
@@ -137,19 +141,19 @@ DynaDoc.prototype.settings = function* settings(userSettings) {
 
 /*
 Promisfied Put Item API call.
+The item must have the primary key already inside it
+otherwise DyanmoDB will throw an error.
 */
 DynaDoc.prototype.putItem = function* putItem(item) {
     var d = Q.defer();
     var payload = generatePayload.call(this);
     payload.Item = item;
-    //console.log('About to call dynamoDoc putItem.');
     //make the put call with the DynamoDoc client we have.
     this.dynamoDoc.put(payload, function(err, res) {
         errorCheck(err, d);
         //If we made it here with no error thrown, then we must have data.
         d.resolve(res);
     });
-    //console.log('Returning dynamoDoc putItem promise.');
     return d.promise;
 };
 
@@ -164,19 +168,7 @@ MyHashKey is the actual key to search the table for.
 DynaDoc.prototype.getItem = function* getItem(key) {
     var d = Q.defer();
     var payload = generatePayload.call(this);
-    /*
-    if (Joi.string(key)) {
-        //The key is a string, so lets take it as the hash.
-        if (this.settings.PrimaryIndexName) {
-            payload.Key = {};
-            payload.Key[this.settings.PrimaryIndexName] = key;
 
-        }
-    } else {
-        //If the key is not defined in settings, then use the parameter.
-        payload.Key = key;
-    }
-    */
     payload.Key = key;
     this.dynamoDoc.get(payload, function(err, res) {
         errorCheck(err, d);
@@ -210,15 +202,13 @@ keyConditionExpression: (String)The Condition expression that is used to search 
   Examples:
   "#hashKey = :hashkey and #rangeKey > :rangeKey"
   "#hashKey = :hashkey and #rangeKey = :rangeKey"
-  "#hashKey = :hashkey "
+  "#hashKey = :hashkey"
 
 expressionAttributeValues: (Object) Key: Variable name in key Condition Expression, Value: The value of the variable.
 expressionAttributeNames: (Object) Key: Hash Variable name in the key Condition Expression, Value: The Name of the Hash attribute
 
-@TODO Improve this by allowing the user to enter more information about their table.
-IE. Get the name of the Primary Hash Index. (Settings)
-See if there is a Range value involved.
-Figure out inteligent way to search for Range values (in expressions) **We could then generate the KeyValue Expression and get Attribute values from the user**
+This method is not inteliigent and requires the user to provide each structure of the call.
+use smartQuery() to use DynaDoc's intelligent system.
 */
 DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpression, expressionAttributeValues, expressionAttributeNames) {
         var payload = generatePayload.call(this);
@@ -230,42 +220,54 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
         return yield this.query(payload);
     }
     /*
-        Once smart functions are enables after the tableDescription is filled out and called.
+        Function that automatically generates the necessary restful information for the
+        Table in order to make requests to DynamoDB. This function makes it easier for
+        developers to work with DynamoDB by giving them simple functions to query their
+        tables. This is the pride and joy of DynaDoc.
 
-        Given the IndexName, we can pull out other details and make the api call for them.
+        Requires: Smart functions to be enabled after the tableDescription is filled out and called.
+
+        Notes: Given the IndexName, we can pull out other details and make the api call for them.
         This assumes there is a range value, if there is no range value then you should
         use the standard get method for standalone hashes.
 
-        indexName: (String) The index name (typically ending in '-index')
-        hashValue: The value for the hash in whatever datatype the index hash is in.
-        rangeValue: The range value for the index to compare or search for. (Optional)
-        action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
+        @param indexName: (String) The index name (typically ending in '-index')
+        @param hashValue: The value for the hash in whatever datatype the index hash is in.
+        @param rangeValue: The range value for the index to compare or search for. (Optional)
+        @param action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
 
-        @TODO Work in the Settings object to make smart queries.
-        @TODO Add the option to use 'Limit' in the query (limits the number of results).
+        Notes: I tested performance of time in this function by measuring execution time and completion.
+        The method prepration for smart query is roughly 2-3ms
+        The total call time (largely dependent on DynamoDB response and network latency): 70-120ms
+        The actual benefit for saving smart queries is almost pointless in time (unless it saves memory). Time difference: -1ms to 1ms
+
         @TODO Support BETWEEN calls (two range values).
-        
+
     */
-DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit  ) {
+DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit) {
+
     var d = Q.defer();
+    //Lets validate the indexName before we start...
+    if (!(getIndexes(this.settings)[indexName])) {
+        throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
+    }
+
     var payload = generatePayload.call(this);
     //Lets generate the response for them with these values.
     if (arguments.length === 2) {
         //Pass null in so it will skip the range value.
-        createSmartPayload(payload, this.settings,  indexName, hashValue, null, null);
-    } else if(arguments.length === 3) {
+        payload = createSmartPayload(payload, this.settings, indexName, hashValue, null, null);
+    } else if (arguments.length === 3) {
         //Pass null in so it will skip the range value.
-        createSmartPayload(payload, this.settings,  indexName, hashValue, rangeValue, null);
-    } else if (arguments.length >= 4){
+        payload = createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, null);
+    } else if (arguments.length >= 4) {
         //All arguments provided so we parse it like normal.
-        createSmartPayload(payload, this.settings,  indexName, hashValue, rangeValue, action);
+        payload = createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, action);
 
     } else {
         //We should throw some error because the user is miss using the function.
         throw new Error('Not enough arguments for smartQuery!');
-        return; //To make sure we do not continue.
     }
-
     this.dynamoDoc.query(payload, function(err, res) {
         errorCheck(err, d);
         d.resolve(res);
@@ -318,42 +320,32 @@ DynaDoc.prototype.updateItem = function* updateItem(params) {
 /*
 Function will make a call to get details about a table.
 
-@TODO I can use this information to fill in the Settings automatically!
-
 We can pull index and hashkey information out of the response.
 Everything is inside of the: Table Key
-
 */
 DynaDoc.prototype.describeTable = function* describeTable(tableName) {
-        console.log('describeTable entered');
-        //Lets get some details about the dynamoDB table.
-        var d = Q.defer();
-        var payload = {};
-        payload.TableName = tableName;
-        var that = this;
-        this.dynamoDB.describeTable(payload, function(err, res) {
-            errorCheck(err, d);
-            //Lets parse the response for information.
-            console.log(JSON.stringify(res, null, 3));
-            d.resolve(res);
-            console.log('The response from DynamoDB for describeTable.');
-            console.log(JSON.stringify(res.Table, null, 3));
-            console.log('END SERVER RESPONSE for DESCRIBETABLE');
-            //Lets get this information for us to use!
+    //Lets get some details about the dynamoDB table.
+    var d = Q.defer();
+    var payload = {};
+    payload.TableName = tableName;
+    var that = this;
+    this.dynamoDB.describeTable(payload, function(err, res) {
+        errorCheck(err, d);
+        //Lets parse the response for information.
+        d.resolve(res);
+        //Lets get this information for us to use!
+        //Lets erease the settings object and rebuild it ourselves.
+        that.settings = {};
+        parseTableDescriptionResponse(that.settings, res.Table);
+    });
+    return d.promise;
+}
 
-            parseTableDescriptionResponse(that.settings, res.Table);
-        });
-        console.log('describeTable exit.');
-        return d.promise;
-    }
-
-// --------------------- Begin the Smarts features!!!! ------------------------------
+// --------------------- Begin the Smart features!!!! ------------------------------
 /*
 Creates a payload given the data from the user and describeTable method.
 Requires that you pass Settings and payload. It does not make any changes to Settings,
 but will add query keys to the payload.
-
-@TODO Need to make this so you do not have to use Range values (helpful)
 
 @TODO THis is awesome! However, generating this everytime for potentially similar queiries
 may be time wasteful. Simply being able to change the values for an existing query will be
@@ -361,74 +353,108 @@ best!
 I believe this can be done by hashing the index name with the action, storing it in Another
 object, then referencing that object by hash when the same command appears again! This way,
 all we really have to do is change the ExpressionAttributeValues's values! :D
+
+The other option to this problem would be to open up some form of this method (at least return
+value). This way a developer could create the query once and change the values themselves.
+Generating the smart query everytime for the same call is wasteful.
 */
 function createSmartPayload(payload, settings, indexName, hashValue, rangeValue, action) {
-    console.log('Creating a smart payload for the user.');
-
-
+    //Get the Indexes object from settings (contains all the indexes).
     var Indexes = getIndexes(settings);
+    //Pull out the index object for the index the user wants to use
     var indexObject = Indexes[indexName];
     if (!indexObject) {
-        //@TODO check if maybe they meant to use the Primary Index (Hash and Range are seperated in this case?)
-        console.log('ERROR! The index Object is not defined so we are not smart enough!');
+        throw new Error('DynaDoc: IndexName does not exist in Table Description.');
         return;
     }
-    console.log('The indexObject we are using in the smarts:');
-    console.log(JSON.stringify(indexObject, null, 3));
 
-    //Generate the Key attribute values and name objects.
+    if (!action) {
+        //No action was defined, so lets always use '='
+        action = "=";
+    }
+
+    if (indexObject.Range && !rangeValue) {
+        //There is a range object and no rangeValue.
+        throw new Error('DynaDoc: The index: ' + indexName + ' requires a Range Value. Please specify one.');
+    }
+
+    //Lets check for already existing smart query
+
+    var smartQuery = getSavedQuery(settings, indexName, action );
+    /*
+    Performance wise, the two methods are about the same. Infact, in some
+    cases, recreating the query every time is faster! (likely the hash algroithm)
+    */
+    if (smartQuery) {
+        /*
+        This means we already have the payload in the smartQuery object.
+        This works by the assumption that all of the payload stays the same
+        but the values.
+        */
+        var expressionAttributeValues = smartQuery.ExpressionAttributeValues;
+        if (expressionAttributeValues) {
+            //All is going well, lets set the values.
+            //We may need to set hash and/or range values.
+            expressionAttributeValues[PAYLOAD_HASH_VALUE_KEY] = hashValue;
+            if (rangeValue) {
+                expressionAttributeValues[PAYLOAD_RANGE_VALUE_KEY] = rangeValue;
+            }
+
+            payload = smartQuery;
+            return smartQuery;
+        } else {
+            //If we do not have the expression Attribute saved, we cannot use this payload!
+            //Do nothing and lets generate it  again...
+        }
+    } else {
+        //No saved query was found.
+    }
+    //Initialize our variables.
     var expressionAttributeNames = {};
     var expressionAttributeValues = {};
     var hashNameString = "";
-    var rangeNameString = "";
     var hashValueString = "";
-    var rangeValueString = "";
-    //ExpressionAttributeNames["#" + ]
 
     var keyConditionExpression = "";
     //We need to check if this is a primary index or secondary.
     if (indexObject.isPrimary) {
         //This is the primary index then you do not specify an IndexName (default is primary!)
-
-    }else {
+    } else {
         payload.IndexName = indexName;
-    }// else {
-        //@TODO may be able to may this simpilier.
-        hashNameString = "#HName" ; //+ indexObject.Hash.name
-        hashValueString = ":HValue"; // + indexObject.Hash.name
+    }
+    hashNameString = PAYLOAD_HASH_NAME_KEY;
+    hashValueString = PAYLOAD_HASH_VALUE_KEY;
 
-        //Generate the name expression attributes.
-        expressionAttributeNames[hashNameString] = indexObject.Hash.name;
-        expressionAttributeValues[hashValueString] = hashValue;
+    //Generate the name expression attributes.
+    expressionAttributeNames[hashNameString] = indexObject.Hash.name;
+    expressionAttributeValues[hashValueString] = hashValue;
 
-        //Now generate the keyConditionExpression.
-        keyConditionExpression = hashNameString + " = " + hashValueString;
+    //Now generate the keyConditionExpression.
+    keyConditionExpression = hashNameString + " = " + hashValueString;
 
-        //If we are also including a range value.
-        if (rangeValue) {
-            rangeNameString = "#RName";// + indexObject.Range.name
-            rangeValueString = ":RValue";// + indexObject.Range.name
-            expressionAttributeNames[rangeNameString] = indexObject.Range.name;
-            expressionAttributeValues[rangeValueString] = rangeValue;
-            if (!action) {
-                //No action was defined, so lets always use '='
-                action = "=";
-            }
-            keyConditionExpression += " and " + rangeNameString + " " + action + " " + rangeValueString;
-        }
-    //}
+    //If we are also including a range value.
+    if (rangeValue) {
+        //Set the range key values and names
+        var rangeNameString = PAYLOAD_RANGE_NAME_KEY;
+        var rangeValueString = PAYLOAD_RANGE_VALUE_KEY;
+        //Change their values.
+        expressionAttributeNames[rangeNameString] = indexObject.Range.name;
+        expressionAttributeValues[rangeValueString] = rangeValue;
+
+        keyConditionExpression += " and " + rangeNameString + " " + action + " " + rangeValueString;
+    }
     payload.KeyConditionExpression = keyConditionExpression;
     payload.ExpressionAttributeValues = expressionAttributeValues;
     payload.ExpressionAttributeNames = expressionAttributeNames;
-    console.log('The final smart payload we have built is: ');
-    console.log(JSON.stringify(payload, null, 3));
+    //Lets save the query for use later!
+    saveQuery(settings, payload, action);
     return payload;
 
 
 }
-    /*
-        Get the Indexes object for
-    */
+/*
+    Get the Indexes object for
+*/
 function getIndexes(settings) {
     if (!settings.Indexes) {
         settings.Indexes = {};
@@ -436,7 +462,50 @@ function getIndexes(settings) {
     return settings.Indexes;
 }
 
+/*
+    Get the saved smart queiries object in settings.
+*/
+function getSavedQueriesObject(settings) {
+    if (!settings.savedQueries) {
+        settings.savedQueries = {};
+    }
+    return settings.savedQueries;
+}
+/*
+ Generate a string that will be used as the key (not a real hash)
+*/
+function getQueryHash(indexName, action) {
+    return indexName + action;
+}
+/*
+    Check if a smart query already exists and returns the payload object.
+*/
+function getSavedQuery(settings, indexName, action ) {
 
+    var queryHash = getQueryHash(indexName, action);
+    var savedQueries = getSavedQueriesObject(settings);
+    if (savedQueries[queryHash]) {
+        return savedQueries[queryHash];
+    }
+    //Return null if we did not find the hash.
+    return null;
+}
+/*
+    Save a smart query to be used later so it does not have to be generated.
+    Pass in action (easier than parsing the payload for the action.)
+*/
+function saveQuery(settings, payload, action) {
+    //We can pull the necessary details from the payload.
+    var indexName = payload.IndexName;
+    if (!indexName) {
+        //the indexName is not defined, this means it is primary.
+        indexName = PRIMARY_INDEX_PLACEHOLDER;
+    }
+    var queryHash = getQueryHash(indexName, action);
+    var savedQueries = getSavedQueriesObject(settings);
+    //Save the payload with its hash.
+    savedQueries[queryHash] = payload;
+}
 
 /*
 Parses out the primary Key Schema for the Table.
@@ -444,14 +513,18 @@ Adds the indexes to the Indexes section of the DynaDoc settings.
 */
 function parsePrimaryKeySchema(settings, primaryKeySchema) {
     var Indexes = getIndexes(settings);
-    Indexes.PrimaryIndex = {
-        "Hash":{"name": primaryKeySchema[0].AttributeName},
-        "isPrimary":true
+    Indexes[PRIMARY_INDEX_PLACEHOLDER] = {
+        "Hash": {
+            "name": primaryKeySchema[0].AttributeName
+        },
+        "isPrimary": true
     };
     //Now we need to see if there is a range key.
     if (primaryKeySchema.length === 2) {
 
-        Indexes.PrimaryIndex.Range = {"name": primaryKeySchema[1].AttributeName};
+        Indexes[PRIMARY_INDEX_PLACEHOLDER].Range = {
+            "name": primaryKeySchema[1].AttributeName
+        };
     }
 
 }
@@ -532,19 +605,16 @@ function parseAttributeDefinitions(settings, attributeDefinitionsArray) {
 Given the value of the "Table" key from a DescriptionTable response, this function
 will parse the important data out for DynaDoc to go through and use for the table.
 This will be a challenge, but would be an amazing feature.
-
-
-@TODO Create and implement the ability to check types for the Attribute definitions for indexes across the table.
+@TODO Use attribute definitions in other methods to check index values to ensure they are correct (Optional).
 */
 function parseTableDescriptionResponse(settings, TableObject) {
     if (!TableObject) {
-        console.log('ERROR: TableObject is not defined! No way to parse it!');
-        return;
+        throw new Error('ERROR: TableObject is not defined! No way to parse it!');
+
     } else if (!settings) {
-        console.log('ERROR: Settings is not defined!');
-        return;
+        throw new Error('ERROR: Settings is not defined!');
+
     }
-    console.log('parseTableDescriptionResponse: All params are defined.');
 
     //Make sure settings reflects this table name.
     settings.TableName = TableObject.TableName;
@@ -559,15 +629,12 @@ function parseTableDescriptionResponse(settings, TableObject) {
     //Defines the data type for each index (only defined in this, not inside individual indexe objects for some silly reason).
     var AttributeDefinitions = TableObject.AttributeDefinitions;
 
-
     //Get the primary hash key and range key into indexes.
     parsePrimaryKeySchema(settings, TableObject.KeySchema);
 
     //Get LocalSecondaryIndexes setup.
     if (TableObject.LocalSecondaryIndexes) {
         parseSecondaryKeySchema(settings, TableObject.LocalSecondaryIndexes);
-    } else {
-        console.log('DynaDoc: No Local Secondary Indexes found.');
     }
 
     if (TableObject.GlobalSecondaryIndexes) {
@@ -576,9 +643,6 @@ function parseTableDescriptionResponse(settings, TableObject) {
 
     //Now that we have all the indexes, we can setup the attribute values and know what each index should be.
     parseAttributeDefinitions(settings, TableObject.AttributeDefinitions);
-
-    console.log('The Final Settings object we have created for this Table is:');
-    console.log(JSON.stringify(settings, null, 3));
 }
 
 /*

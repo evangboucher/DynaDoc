@@ -222,19 +222,9 @@ co(function* putItemGenerator() {
     //Describe the table.
     //var res = yield dynaDoc.describeTable(TABLE_NAME);
     var res = yield dynaDoc.describeTable(TABLE_NAME + "Delete");
+
+
     /*
-    console.log('Put item is about to be called.')
-    var res;
-    try {
-        res = yield dynaDoc.putItem(data);
-
-    } catch (err) {
-        console.log('Exception while using DynoDoc.');
-        console.log(JSON.stringify(err, null, 3));
-    }
-    console.log(JSON.stringify(res, null, 3));
-    console.log('Put Item is now finished.\n');
-
     for (var i = 0; i < example_data.length; i++) {
 
         console.log('Put item is about to be called.')
@@ -257,27 +247,56 @@ co(function* putItemGenerator() {
     //console.log(JSON.stringify(query, null, 3));
     console.log('Query item is now done.\n');
 
-    console.log('Using Smart query!');
+    console.log('\nUsing Smart query!');
     var smartQuery = yield dynaDoc.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange", "=");
     //var smartQuery = yield dynaDoc.smartQuery("Primary","TestingHash", "RangeTest", "=");
 
     console.log(JSON.stringify(smartQuery, null, 3));
     smartQuery = yield dynaDoc.smartQuery("LocalSecondaryIndex-index","PrimaryHashTest", "SecondaryIndex");
-    console.log(JSON.stringify(smartQuery, null, 3));
+    //console.log(JSON.stringify(smartQuery, null, 3));
 
-    console.log('Testing Primary Key with Hash and Range!!!!')
+    console.log('\nREPEATED CALL!!! TESTING SAVED Smart Queries! --------------');
+    smartQuery = yield dynaDoc.smartQuery("LocalSecondaryIndex-index","PrimaryHashTest", "SecondaryIndex");
+    //console.log(JSON.stringify(smartQuery, null, 3));
+
+    console.log('\nTesting Primary Key with Hash and Range!!!!')
     smartQuery = yield dynaDoc.smartQuery("PrimaryIndex","PrimaryHashTest", 1);
-    console.log(JSON.stringify(smartQuery, null, 3));
-    console.log('DDDOOONNNNEEEE: Testing Primary Key with Hash and Range!!!!')
+    //console.log(JSON.stringify(smartQuery, null, 3));
+    console.log('DDDOOONNNNEEEE: Testing Primary Key with Hash and Range!!!!\n')
+
+
     //A table change so we can parse the table (maybe it should save the previous table?)
     var res = yield dynaDoc.describeTable(TABLE_NAME);
-    //Get an item by a global secondary index.
-    smartQuery = yield dynaDoc.smartQuery("Timestamp-index","2015-08-11T21:32:34.338Z");
-    console.log(JSON.stringify(smartQuery, null, 3));
 
-    smartQuery = yield dynaDoc.smartQuery("PrimaryIndex","example7");
-    console.log(JSON.stringify(smartQuery, null, 3));
+    dynaDoc.setSettings({"ReturnValues":"ALL_OLD"});
+    console.log('Done changing settings for DynaDoc.');
+
+    console.log('Put item is about to be called.')
+
+    try {
+        res = yield dynaDoc.putItem(data);
+
+    } catch (err) {
+        console.log('Exception while using DynoDoc.');
+        console.log(JSON.stringify(err, null, 3));
+    }
+    //console.log(JSON.stringify(res, null, 3));
+    console.log('Put Item is now finished.\n');
+
+
+    try {
+    //Get an item by a global secondary index.
+    //smartQuery = yield dynaDoc.smartQuery("Timestamp-index444444","2015-08-11T21:32:34.338Z");
+    //console.log(JSON.stringify(smartQuery, null, 3));
+    console.log('After smart query for timestamp index.');
+} catch(err) {
+    console.log('Time-stamp index got an error: ' + err);
+}
+    //smartQuery = yield dynaDoc.smartQuery("PrimaryIndex","example7");
+    //console.log(JSON.stringify(smartQuery, null, 3));
     console.log('Smart query returned!');
+
+    console.log('Successfully completed all calls.');
     return res;
 });
 
