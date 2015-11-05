@@ -30,6 +30,8 @@ const PAYLOAD_HASH_NAME_KEY = "#hName";
 const PAYLOAD_HASH_VALUE_KEY = ":hValue";
 const PAYLOAD_RANGE_NAME_KEY = "#rName";
 const PAYLOAD_RANGE_VALUE_KEY = ":rValue";
+const PAYLOAD_RANGE_UPPER_NAME_KEY = "#rUValue";
+const PAYLOAD_RANGE_UPPER_VALUE_KEY = ":rUValue";
 
 const PRIMARY_INDEX_PLACEHOLDER = "PrimaryIndex";
 
@@ -39,7 +41,8 @@ Default settings for the DynaDoc module.
 const DEFAULT_SETTINGS = {
     ReturnValues: 'NONE',
     ReturnConsumedCapacity: 'NONE',
-    ReturnItemCollectionMetrics: 'NONE'
+    ReturnItemCollectionMetrics: 'NONE',
+    Limit:10
 
 }
 
@@ -235,6 +238,7 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
         @param hashValue: The value for the hash in whatever datatype the index hash is in.
         @param rangeValue: The range value for the index to compare or search for. (Optional)
         @param action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
+        @param limit: An integer limit to the number of objects to return.
 
         Notes: I tested performance of time in this function by measuring execution time and completion.
         The method prepration for smart query is roughly 2-3ms
@@ -242,6 +246,9 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
         The actual benefit for saving smart queries is almost pointless in time (unless it saves memory). Time difference: -1ms to 1ms
 
         @TODO Support BETWEEN calls (two range values).
+        To support BETWEEN calls, we will need another Rangevalue.
+        The action is always "AND" for BETWEEN calls.
+        This may require a smarter way to handle these parameters.
 
     */
 DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit) {
@@ -255,11 +262,11 @@ DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeV
     var payload = generatePayload.call(this);
     //Lets generate the response for them with these values.
     if (arguments.length === 2) {
-        //Pass null in so it will skip the range value.
-        payload = createSmartPayload(payload, this.settings, indexName, hashValue, null, null);
+        //Pass undefined in so it will skip the range value.
+        payload = createSmartPayload(payload, this.settings, indexName, hashValue, undefined, undefined);
     } else if (arguments.length === 3) {
-        //Pass null in so it will skip the range value.
-        payload = createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, null);
+        //Pass undefined in so it will skip the range value.
+        payload = createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, undefined);
     } else if (arguments.length >= 4) {
         //All arguments provided so we parse it like normal.
         payload = createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, action);
@@ -268,11 +275,46 @@ DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeV
         //We should throw some error because the user is miss using the function.
         throw new Error('Not enough arguments for smartQuery!');
     }
+
+    if (!limit) {
+        limit = this.settings.Limit;
+    }
+    payload.Limit = limit;
     this.dynamoDoc.query(payload, function(err, res) {
         errorCheck(err, d);
         d.resolve(res);
     });
     return d.promise;
+}
+
+/*
+    The smart query Between call (I choose not to make it apart of smartquery right now).
+*/
+DynaDoc.prototype.smartBetween = function *smartBetween(indexName, hashValue, lowerRangeValue, upperRangeValue, limit) {
+    var d = Q.defer();
+    //Lets validate the indexName before we start...
+    if (!(getIndexes(this.settings)[indexName])) {
+        throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
+    }
+
+    var payload = generatePayload.call(this);
+    if (arguments.length >= 4) {
+    //All arguments provided so we parse it like normal.
+    payload = createSmartPayload(payload, this.settings, indexName, hashValue, lowerRangeValue, undefined, upperRangeValue);
+
+    } else {
+        throw new Error('smartBetween(): Not enough arguments to do a BETWEEN query.');
+    }
+    if (!limit) {
+        limit = this.settings.Limit;
+    }
+    payload.Limit = limit;
+    this.dynamoDoc.query(payload, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+
 }
 
 /*
@@ -347,6 +389,8 @@ Creates a payload given the data from the user and describeTable method.
 Requires that you pass Settings and payload. It does not make any changes to Settings,
 but will add query keys to the payload.
 
+@param upperRangeValue: If defined, then the query generated will be a BETWEEN query.
+
 @TODO THis is awesome! However, generating this everytime for potentially similar queiries
 may be time wasteful. Simply being able to change the values for an existing query will be
 best!
@@ -358,7 +402,7 @@ The other option to this problem would be to open up some form of this method (a
 value). This way a developer could create the query once and change the values themselves.
 Generating the smart query everytime for the same call is wasteful.
 */
-function createSmartPayload(payload, settings, indexName, hashValue, rangeValue, action) {
+function createSmartPayload(payload, settings, indexName, hashValue, rangeValue, action, upperRangeValue) {
     //Get the Indexes object from settings (contains all the indexes).
     var Indexes = getIndexes(settings);
     //Pull out the index object for the index the user wants to use
@@ -372,8 +416,8 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
         //No action was defined, so lets always use '='
         action = "=";
     }
-
-    if (indexObject.Range && !rangeValue) {
+    //Check if they gave us a range value, the index may require it. (0  is an acceptable value)
+    if (indexObject.Range && (!rangeValue && (rangeValue != 0))) {
         //There is a range object and no rangeValue.
         throw new Error('DynaDoc: The index: ' + indexName + ' requires a Range Value. Please specify one.');
     }
@@ -384,8 +428,9 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
     /*
     Performance wise, the two methods are about the same. Infact, in some
     cases, recreating the query every time is faster! (likely the hash algroithm)
+    Lets never save a BETWEEN value for right now...
     */
-    if (smartQuery) {
+    if (smartQuery && !upperRangeValue) {
         /*
         This means we already have the payload in the smartQuery object.
         This works by the assumption that all of the payload stays the same
@@ -434,14 +479,21 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
 
     //If we are also including a range value.
     if (rangeValue) {
-        //Set the range key values and names
-        var rangeNameString = PAYLOAD_RANGE_NAME_KEY;
-        var rangeValueString = PAYLOAD_RANGE_VALUE_KEY;
+        //Check if the range is a Between or standard range.
+        if (upperRangeValue) {
+            //we need to set it up for a BETWEEN value range. BETWEEN always using "and" as its action.
+            keyConditionExpression += " and " + PAYLOAD_RANGE_NAME_KEY + " BETWEEN " + PAYLOAD_RANGE_VALUE_KEY + " and " + PAYLOAD_RANGE_UPPER_VALUE_KEY;
+            //set the extra Upper value.
+            PAYLOAD_RANGE_UPPER_NAME_KEY
+            //Set the upper value.
+            expressionAttributeValues[PAYLOAD_RANGE_UPPER_VALUE_KEY] = upperRangeValue;
+        } else {
+            //The general Range expression with the user action.
+            keyConditionExpression += " and " + PAYLOAD_RANGE_NAME_KEY + " " + action + " " + PAYLOAD_RANGE_VALUE_KEY;
+        }
         //Change their values.
-        expressionAttributeNames[rangeNameString] = indexObject.Range.name;
-        expressionAttributeValues[rangeValueString] = rangeValue;
-
-        keyConditionExpression += " and " + rangeNameString + " " + action + " " + rangeValueString;
+        expressionAttributeNames[PAYLOAD_RANGE_NAME_KEY] = indexObject.Range.name;
+        expressionAttributeValues[PAYLOAD_RANGE_VALUE_KEY] = rangeValue;
     }
     payload.KeyConditionExpression = keyConditionExpression;
     payload.ExpressionAttributeValues = expressionAttributeValues;
@@ -487,8 +539,8 @@ function getSavedQuery(settings, indexName, action ) {
     if (savedQueries[queryHash]) {
         return savedQueries[queryHash];
     }
-    //Return null if we did not find the hash.
-    return null;
+    //Return undefined if we did not find the hash.
+    return undefined;
 }
 /*
     Save a smart query to be used later so it does not have to be generated.

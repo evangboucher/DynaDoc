@@ -264,6 +264,17 @@ co(function* putItemGenerator() {
     //console.log(JSON.stringify(smartQuery, null, 3));
     console.log('DDDOOONNNNEEEE: Testing Primary Key with Hash and Range!!!!\n')
 
+    console.log('Testing BETWEEN.');
+    try {
+        smartQuery = yield dynaDoc.smartBetween("CustomerID-Date-index","Test1", 0, 1, 5);
+    }catch (err) {
+        console.log(err);
+        return;
+    }
+
+    console.log('Done getting the between values!');
+    console.log(JSON.stringify(smartQuery, null, 4));
+
 
     //A table change so we can parse the table (maybe it should save the previous table?)
     var res = yield dynaDoc.describeTable(TABLE_NAME);
