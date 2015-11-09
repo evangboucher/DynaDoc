@@ -31,12 +31,12 @@ Examples of using DynaDoc:
 #!javascript
 
 //Using the standard DynamoDB SDK DocumentClient, uses callbacks.
-dynaClient.dynamoDoc.get('<params>', function(err, res) {return res;});
+dynaClient.dynamoDoc.get('<params>', function(err, res) {console.log(JSON.stringify(res, null, 4));});
 
 //Using DynaDoc's Promisfied Enpoints.  Express Framework
-dynaClient.getItem('<PrimaryHashKey>').then(function (err, res) { return res});
+dynaClient.getItem('<PrimaryHashKey>').then(function (err, res) { console.log(JSON.stringify(res, null, 4));});
 
-//Using Koa Framework
+//Using ES6 Generators
 var response = yield dynaClient.getItem('<PrimaryHashKey>');
 
 //Using DynaDoc's smartQuery function.
@@ -93,13 +93,14 @@ More details about specific functions and abilities will be below.
 ### Configuration ###
 DynaDoc can be configured by the following methods.
 
-describeTable('<TableName>');
+### describeTable('<TableName>'); ###
 
 the describeTable method will query the table description and parse the response. The response is parsed into a settings object that contains all the important details about the table and its indexes (names, data types, hash and/range range keys, etc.). This method essentially resets the DynaDoc object to work with the default settings for the given TableName.
 
-setSettings(<SettingsObject>);
+### setSettings(<SettingsObject>); ###
 
 setSettings will allow you to add default values to every payload. Currently the following settings are supported (other settings will be ignored! IE. You cannot add custom settings!):
+
 * ReturnValues: <String> 'NONE | ALL_OLD | UPDATED_OLD | ALL_NEW | UPDATED_NEW'
 * ReturnConsumedCapacity: <String> 'INDEXES | TOTAL | NONE'
 * ReturnItemCollectionMetrics: <String> 'SIZE | NONE'
@@ -108,13 +109,8 @@ setSettings will allow you to add default values to every payload. Currently the
 * NPM: [aws-sdk ](Link https://www.npmjs.com/package/aws-sdk)
 
 ### How to run tests ###
-DynaDoc uses Mocha to run and test the library.
+DynaDoc uses Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions.
 
-```
-#!javascript
-//within Terminal, cd to the tests/ directory and run:
-mocha
-```
 
 
 ### Contribution guidelines ###
