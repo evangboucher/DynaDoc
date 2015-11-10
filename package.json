@@ -2,32 +2,38 @@
     "name": "DynaDoc",
     "version": "0.0.1",
     "description": "An easier and more intelligent way to use DynamoDB.",
-    "main": "dynamotest.js",
+    "main": "DynaDoc.js",
     "scripts": {
-        "test": "node --harmony"
+        "test": "node --harmony test/dynamotest.js"
     },
     "keywords": [
         "node",
         "dynamo",
         "aws",
-        "db"
+        "db",
+        "dyna",
+        "doc"
     ],
     "repository": {
         "type": "git",
         "url": "https://bitbucket.org/greenwave/dynadoc.git"
     },
     "author": "Evan Boucher",
-    "license": "ISC",
+    "license": "Apache-2.0",
+    "engines": {
+        "node": ">= 0.12.0"
+    },
+    "directories": {
+        "lib": "lib"
+    },
     "dependencies": {
         "aws-sdk": "^2.2.12",
-        "co": "^4.6.0",
-        "install": "^0.1.8",
         "joi": "^6.5.0",
-        "npm": "^3.3.8",
-        "q": "^1.4.1",
-        "winston": "^1.1.1"
+        "q": "^1.4.1"
     },
     "devDependencies": {
-        "eslint": "^1.7.3"
+        "eslint": "^1.7.3",
+        "co": "^4.6.0",
+        "install": "^0.1.8"
     }
 }

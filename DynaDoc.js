@@ -1,24 +1,42 @@
 "use strict"
 /*
-A custom library for Mohu to promisify the AWS DynamoDB SDK for
+
+   Copyright 2015 Mohu Inc.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+
+A library for to promisify the AWS DynamoDB SDK for
 JavaScript. This library aims to take the DyanmoDB DocumentClient
 to be utilized in a promisfied way so generators will work easily with
 it. Each method is promified through the Q promise library.
 Methods will throw an error if DynamoDB should return one. It is
 your responsibility to catch and handle the errors from DynamoDB.
+"Smart" will generate payloads based on the table description provided
+by DynamoDB.
 
 You can pass in a completed AWS object to initalize the client.
 
-I aim to make this library reusable and hope to make it into a
-seperate module.
 
 @TODO Make Update inteligent so it updates items specifically and conditionally.
 @TODO (Stretch) Make update smarter to identify like fields and update them.
 
+Not yet released to NPM
 
 @author: Evan Boucher
 @copyright: Mohu Inc.
 @Created: 10/28/2015
+@version: 0.0.1
 */
 
 //Q the promised library.
@@ -42,15 +60,20 @@ const DEFAULT_SETTINGS = {
     ReturnValues: 'NONE',
     ReturnConsumedCapacity: 'NONE',
     ReturnItemCollectionMetrics: 'NONE',
-    Limit:10
+    Limit: 10
 
 }
 
+
 /*
-Constructor function.
+Constructor function. By creating a new one, DynaDoc will
+go ahead and parse the table description. You can call
+describeTable at any time to update DynaDoc's description
+of the table.
 Params: The AWS SDK Client we are passed in the constructor.
 */
-function DynaDoc(AWS, tableName) {
+var DynaDoc = function DynaDoc(AWS, tableName) {
+
     if (!tableName) {
         //The table name does not exist, so nothing will work.
         throw new Error('DynaDoc: TableName is not defined.');
@@ -69,7 +92,10 @@ function DynaDoc(AWS, tableName) {
     this.dynadoc = {};
     this.settings = DEFAULT_SETTINGS;
     this.settings.TableName = tableName;
+
 }
+
+
 
 /*
 Simple error checking to reuse some code.
@@ -252,7 +278,6 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
 
     */
 DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit) {
-
     var d = Q.defer();
     //Lets validate the indexName before we start...
     if (!(getIndexes(this.settings)[indexName])) {
@@ -279,6 +304,7 @@ DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeV
     if (!limit) {
         limit = this.settings.Limit;
     }
+    //Always set the limit.
     payload.Limit = limit;
     this.dynamoDoc.query(payload, function(err, res) {
         errorCheck(err, d);
@@ -288,9 +314,13 @@ DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeV
 }
 
 /*
-    The smart query Between call (I choose not to make it apart of smartquery right now).
+    The smart query Between call. Will return items from the indexName that are
+    between the given lowerRangeValue and the upperRangeValue.
+    You can pass in a intger to limit the number of items that are returned.
+
+    @TODO Integrate thing into smartQuery (since it is a query operation)
 */
-DynaDoc.prototype.smartBetween = function *smartBetween(indexName, hashValue, lowerRangeValue, upperRangeValue, limit) {
+DynaDoc.prototype.smartBetween = function* smartBetween(indexName, hashValue, lowerRangeValue, upperRangeValue, limit) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
     if (!(getIndexes(this.settings)[indexName])) {
@@ -299,8 +329,8 @@ DynaDoc.prototype.smartBetween = function *smartBetween(indexName, hashValue, lo
 
     var payload = generatePayload.call(this);
     if (arguments.length >= 4) {
-    //All arguments provided so we parse it like normal.
-    payload = createSmartPayload(payload, this.settings, indexName, hashValue, lowerRangeValue, undefined, upperRangeValue);
+        //All arguments provided so we parse it like normal.
+        payload = createSmartPayload(payload, this.settings, indexName, hashValue, lowerRangeValue, undefined, upperRangeValue);
 
     } else {
         throw new Error('smartBetween(): Not enough arguments to do a BETWEEN query.');
@@ -424,7 +454,7 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
 
     //Lets check for already existing smart query
 
-    var smartQuery = getSavedQuery(settings, indexName, action );
+    var smartQuery = getSavedQuery(settings, indexName, action);
     /*
     Performance wise, the two methods are about the same. Infact, in some
     cases, recreating the query every time is faster! (likely the hash algroithm)
@@ -457,8 +487,6 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
     //Initialize our variables.
     var expressionAttributeNames = {};
     var expressionAttributeValues = {};
-    var hashNameString = "";
-    var hashValueString = "";
 
     var keyConditionExpression = "";
     //We need to check if this is a primary index or secondary.
@@ -467,15 +495,13 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
     } else {
         payload.IndexName = indexName;
     }
-    hashNameString = PAYLOAD_HASH_NAME_KEY;
-    hashValueString = PAYLOAD_HASH_VALUE_KEY;
 
     //Generate the name expression attributes.
-    expressionAttributeNames[hashNameString] = indexObject.Hash.name;
-    expressionAttributeValues[hashValueString] = hashValue;
+    expressionAttributeNames[PAYLOAD_HASH_NAME_KEY] = indexObject.Hash.name;
+    expressionAttributeValues[PAYLOAD_HASH_VALUE_KEY] = hashValue;
 
     //Now generate the keyConditionExpression.
-    keyConditionExpression = hashNameString + " = " + hashValueString;
+    keyConditionExpression = PAYLOAD_HASH_NAME_KEY + " = " + PAYLOAD_HASH_VALUE_KEY;
 
     //If we are also including a range value.
     if (rangeValue) {
@@ -532,7 +558,7 @@ function getQueryHash(indexName, action) {
 /*
     Check if a smart query already exists and returns the payload object.
 */
-function getSavedQuery(settings, indexName, action ) {
+function getSavedQuery(settings, indexName, action) {
 
     var queryHash = getQueryHash(indexName, action);
     var savedQueries = getSavedQueriesObject(settings);
