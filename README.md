@@ -96,7 +96,7 @@ var response = yield dynaClient.smartQuery("GlobalSecondary-index","GlobalHash",
 
 # API Documentation #
 
-Please visit the Wiki for API details: [DynaDoc Wiki](https://github.com/evangboucher/DynaDoc/wiki/API)
+Please visit the Wiki for API details: <a href="https://github.com/evangboucher/DynaDoc/wiki/API" target="_blank">DynaDoc Wiki</a>
 
 
 
@@ -119,7 +119,7 @@ setSettings will allow you to add default values to every payload. Currently the
 * ReturnItemCollectionMetrics: <String> 'SIZE | NONE'
 
 ### Dependencies ###
-* NPM: [aws-sdk ](Link https://www.npmjs.com/package/aws-sdk)
+* NPM: <a href="https://www.npmjs.com/package/aws-sdk" target="_blank">aws-sdk</a>
 
 ### How to run tests ###
 DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions.
@@ -142,7 +142,7 @@ Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or
 
 DynaDoc is Open Source and authored by Evan Boucher.
 
-Copyrighted and Sponsored by Mohu Inc. ([www.gomohu.com](Link www.gomohu.com))
+Copyrighted and Sponsored by Mohu Inc. <a href="http://www.gomohu.com" target="_blank">www.gomohu.com</a>
 
 
 ### Why DynaDoc? ###
@@ -173,7 +173,8 @@ http://www.gomohu.com
 When possible please make the URL a hyper link.
 It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution.
 
-This site gives a good overview of the license (this is not legal advice!): [CPAL-1.0](https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary)
+This site gives a good overview of the license (this is not legal advice!): 
+<a href="https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary" target="_blank">CPAL-1.0</a>
 
 Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider the above sentences legal advice for any reason. Thanks!
 
