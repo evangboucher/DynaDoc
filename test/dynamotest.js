@@ -1,5 +1,23 @@
 "use strict"
 /*
+The contents of this file are subject to the Common Public Attribution License
+Version 1.0 (the “License”); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+https://github.com/evangboucher/DynaDoc/blob/master/LICENSE. The
+License is based on the Mozilla Public License Version 1.1 but Sections 14 and
+15 have been added to cover use of software over a computer network and provide
+for limited attribution for the Original Developer. In addition, Exhibit A has
+been modified to be consistent with Exhibit B.
+
+Software distributed under the License is distributed on an “AS IS” basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
+the specific language governing rights and limitations under the License.
+
+The Original Code is DynaDoc.
+
+The Initial Developer of the Original Code is Evan Boucher.
+Copyright (c) Mohu Inc.  All Rights Reserved.
+
 A simple document to utilize and play with DynaDoc while I build it.
 This is not in any way official or even useful testing. Strickly development
 purposes.
@@ -42,90 +60,7 @@ var dynaDoc = new DynoDoc(AWS, TABLE_NAME);
 //db.listTable();
 
 var primary_hash = "Test2";
-var data = {
-    "CustomerID": "Test2",
-    "sensorID": "ca576ad6-90e0-43db-afb3-5fe25bab1c7f",
-    "timestamp": [{
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }, {
-        "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
-    }]
-};
-var example_data = [{
-    "Timestamp": "2015-08-11T21:31:32.338Z",
-    "CustomerID": "example1"
-}, {
-    "Timestamp": "2015-08-11T22:31:32.338Z",
-    "CustomerID": "example2"
-}, {
-    "Timestamp": "2015-08-11T21:21:32.338Z",
-    "CustomerID": "example3"
-}, {
-    "Timestamp": "2015-08-11T21:32:32.338Z",
-    "CustomerID": "example4"
-}, {
-    "Timestamp": "2015-08-11T21:32:34.338Z",
-    "CustomerID": "example5"
-}, {
-    "Timestamp": "2015-08-11T21:34:34.338Z",
-    "CustomerID": "example6"
-}, {
-    "Timestamp": "2015-08-11T23:34:34.338Z",
-    "CustomerID": "example7"
-}, {
-    "Timestamp": "2015-08-11T23:44:34.338Z",
-    "CustomerID": "example8"
-}]
+
 
 co(function* putItemGenerator() {
 
@@ -167,7 +102,12 @@ co(function* putItemGenerator() {
     console.log('Put item is about to be called.')
 
     try {
-        res = yield dynaDoc.putItem(data);
+        res = yield dynaDoc.putItem({"CustomerID":"Test2",    
+            "timestamp": [{
+                "time": "2015-08-11T21:31:32.338Z",
+                "value": 76
+            }]
+        });
 
     } catch (err) {
         console.log('Exception while using DynoDoc.');
