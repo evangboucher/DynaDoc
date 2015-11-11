@@ -1,7 +1,6 @@
 # DynaDoc #
 
-NOTICE: DynaDoc is not yet ready for production. You should not use this library until
-version 1.0.0 is released. Planned release date is: 12/4/2015
+NOTICE: DynaDoc is not yet ready for production. Every peice of thie project is under heavy development. You should not use this library for production purposes until version 1.0.0 is released. Planned release date is: 12/4/2015
 
 DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript. DynaDoc is a promise-based DocumentClient API that is able to parse DynamoDB table's description and generates payloads dynamically. DynaDoc builds directly off of the DynamoDB Document Client (simply promising the original DynamoDB DocumentClient API) with some smart parsing features. Normally the DynamoDB requires a fairly large JSON payload with a lot of repetitive data. DynaDoc tries to make it easier and abstract this payload generation away from the developer.
 
@@ -15,21 +14,32 @@ it will make sense to have the SDK. Hopefully, we can come up with a way to mini
 
 Install the module.
 ```
-#!javascript
-
 npm install dynadoc
 ```
 
 To instantiate it:
 
-```
-#!javascript
-
+```javascript
 //Requires the AWS-SDK
 var AWS = require('aws-sdk');
+
+/*
+Here you may need to include Secrete keys if running outside of EC2.
+Otherwise you can assign a DynamoDB role to EC2 instances.
+
+Example Config with keys (These keys are not valid. Replace with your valid keys):
+{
+    "accessKeyId": "djakAKJDiwjskJSAKSHWnSK",
+    "secretAccessKey": "maskhakJSlKJHSHFLK/SHJFKLHSKLDJSKHFKLSHfwn",
+    "region": "us-east-1"
+}
+*/
 AWS.config.update({'region':'<YOUR REGION HERE>'});
+
+//Require the dynadoc module.
 var DynaDoc = require('dynadoc')
-//If you have multiple tables, you can instantiate multiple DynaDocClients.
+
+//If you have multiple tables, you can instantiate multiple DynaDocClients. You must make at least one
 var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
 
 //Required in order to use the 'smart' methods of DynaDoc.
@@ -37,9 +47,7 @@ dynaClient.describeTable('<TABLE_NAME>');
 ```
 
 Examples of using DynaDoc:
-```
-#!javascript
-
+```javascript
 //Using the standard DynamoDB SDK DocumentClient, uses callbacks.
 dynaClient.dynamoDoc.get('<params>', function(err, res) {console.log(JSON.stringify(res, null, 4));});
 
@@ -59,9 +67,7 @@ var response = yield dynaClient.smartQuery('<IndexName>', '<HashValue>', '<Range
 
 For example, here is a query call for DynamoDB JavaScript SDK Document Client:
 
-```
-#!javascript
-
+```javascript
 //The developer must generate this and pass it into the DyanmoDB DocumentClient as a param.
 var payload = {
     "TableName": "DynamoExample",
@@ -81,11 +87,10 @@ var payload = {
 
 DynaDoc makes one call to the table description and parses all necessary index details for the developer. The above query is automatically generated. The developer can simply pass in the values they want like so:
 
-```
-#!javascript
+```javascript
 //This generates the previous example dynamically.
 //                                      Index Name,            Hash Value, Range Value, Action, Limit
-var response = yield dynaDoc.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange",  ">=",  12);
+var response = yield dynaClient.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange",  ">=",  12);
 ```
 
 
@@ -168,9 +173,9 @@ http://www.gomohu.com
 When possible please make the URL a hyper link.
 It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution.
 
-This site gives good overview of the license (this is not legal advice!): [CPAL-1.0](https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary)
+This site gives a good overview of the license (this is not legal advice!): [CPAL-1.0](https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary)
 
-Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider this legal advice in any sense. Thanks!
+Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider the above sentences legal advice for any reason. Thanks!
 
 ---
 Software distributed under the License is distributed on an “AS IS” basis,
