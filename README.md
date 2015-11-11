@@ -180,4 +180,4 @@ the specific language governing rights and limitations under the License.
 The Original Code is DynaDoc.
 
 The Initial Developer of the Original Code is Evan Boucher.
-Copyright (c) Mohu Inc.  All Rights Reserved.
+Copyright (c) 2015 Mohu Inc.  All Rights Reserved.
