@@ -29,6 +29,8 @@ var AWS = require('aws-sdk');
 AWS.config.update({'region':'<YOUR REGION HERE>'});
 var DynaDoc = require('dynadoc')(
 var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
+//Required in order to use the 'smart' methods of DynaDoc.
+dynaClient.describeTable('<TABLE_NAME>');
 ```
 
 Examples of using DynaDoc:
@@ -114,7 +116,7 @@ setSettings will allow you to add default values to every payload. Currently the
 * NPM: [aws-sdk ](Link https://www.npmjs.com/package/aws-sdk)
 
 ### How to run tests ###
-DynaDoc uses Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions.
+DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions.
 
 
 
@@ -133,7 +135,8 @@ Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or
 * Contributions are welcome. Please create a submit a pull request.
 
 DynaDoc is Open Source and authored by Evan Boucher.
-Sponsored by Mohu Inc. ([www.gomohu.com](Link www.gomohu.com))
+
+Copyrighted and Sponsored by Mohu Inc. ([www.gomohu.com](Link www.gomohu.com))
 
 
 ### Why DynaDoc? ###
