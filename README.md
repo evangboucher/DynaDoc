@@ -1,9 +1,14 @@
 # DynaDoc #
 
+NOTICE: DynaDoc is not yet ready for production. You should not use this library until
+version 1.0.0 is released. Planned release date is: 12/4/2015
+
 DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript. DynaDoc is a promise-based DocumentClient API that is able to parse DynamoDB table's description and generates payloads dynamically. DynaDoc builds directly off of the DynamoDB Document Client (simply promising the original DynamoDB DocumentClient API) with some smart parsing features. Normally the DynamoDB requires a fairly large JSON payload with a lot of repetitive data. DynaDoc tries to make it easier and abstract this payload generation away from the developer.
 
+Current Version: 0.0.1
+
 Quick Notes:
-1. DynaDoc is dependent on the AWS SDK and requires it.
+1. DynaDoc is dependent on the AWS SDK and requires it through npm install.
 
 ## Getting started ##
 
@@ -87,7 +92,7 @@ More details about specific functions and abilities will be below.
 
 
 
-## How do I get set up? ## 
+## How do I get set up? ##
 
 
 ### Configuration ###
@@ -133,7 +138,7 @@ Sponsored by Mohu Inc. ([www.gomohu.com](Link www.gomohu.com))
 
 ### Why DynaDoc? ###
 
-DynaDoc was made by a developer who loves AWS and needed the best way to access DynamoDB quickly and effectively. DynaDoc hopes to become that tool! 
+DynaDoc was made by a developer who loves AWS and needed the best way to access DynamoDB quickly and effectively. DynaDoc hopes to become that tool!
 
 
 ## ToDo List ##
@@ -146,4 +151,6 @@ The current list of things that need to be done next.
 
 
 ### License ###
-Not yet decided. Currently Proprietary and owned by Mohu Inc.
+CPAL-1.0
+
+A short description of what is required will be placed here soon.
