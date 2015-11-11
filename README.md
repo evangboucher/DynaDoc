@@ -28,7 +28,8 @@ To instantiate it:
 //Requires the AWS-SDK
 var AWS = require('aws-sdk');
 AWS.config.update({'region':'<YOUR REGION HERE>'});
-var DynaDoc = require('dynadoc')(
+var DynaDoc = require('dynadoc')
+//If you have multiple tables, you can instantiate multiple DynaDocClients.
 var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
 
 //Required in order to use the 'smart' methods of DynaDoc.
@@ -134,7 +135,7 @@ Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or
 
 * Evan Boucher
 * Please open issues if you discover a problem or to request a new feature.
-* Contributions are welcome. Please create a pull request.
+* Contributions are welcomed. Please create a pull request.
 
 DynaDoc is Open Source and authored by Evan Boucher.
 
