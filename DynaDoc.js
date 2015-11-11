@@ -67,13 +67,17 @@ const DEFAULT_SETTINGS = {
 }
 
 
-/*
-Constructor function. By creating a new one, DynaDoc will
-go ahead and parse the table description. You can call
-describeTable at any time to update DynaDoc's description
-of the table.
-Params: The AWS SDK Client we are passed in the constructor.
-*/
+/**
+Constructor function. By creating a new one, you can simply
+use the DynamoDB DocumentClient from the AWS SDK attatched as
+dynaClient.dynamoDoc
+You can call describeTable at any time to update DynaDoc's
+description of the table.
+@param AWS (Object):  The AWS SDK Client we are passed in the constructor.
+@param tableName (String): The string name of the table to parse.
+
+@returns dynaClient (Object): New Instance of DynaDoc.
+**/
 var DynaDoc = function DynaDoc(AWS, tableName) {
 
     if (!tableName) {
@@ -90,6 +94,7 @@ var DynaDoc = function DynaDoc(AWS, tableName) {
     The table name that this doc client will be accessing.
     For simplicity.
     */
+    this.PrimaryIndexName = PRIMARY_INDEX_PLACEHOLDER;
 
     this.dynadoc = {};
     this.settings = DEFAULT_SETTINGS;
@@ -99,19 +104,19 @@ var DynaDoc = function DynaDoc(AWS, tableName) {
 
 
 
-/*
+/**
 Simple error checking to reuse some code.
-*/
+**/
 function errorCheck(err, d) {
     if (err) {
         d.reject();
         throw err;
     }
 }
-/*
+/**
 A function that generates a generic payload from the
 Settings passed in at creation.
-*/
+**/
 function generatePayload() {
     if (!this.settings.TableName) {
         //The table name does not exist, so nothing will work.
@@ -127,7 +132,7 @@ function generatePayload() {
 
     return payload;
 }
-/*
+/**
 Settings for the DynaDoc client to use.
 
 This method does not change the TableName attribute.
@@ -137,8 +142,13 @@ new DynaDoc object or call describeTable with the new TableName.
 This ensures that settings are not confused (would cause problems for
 the smart query).
 
+Options:
+ReturnValues: 'NONE' | 'ALL_OLD' | 'UPDATED_OLD' | 'ALL_NEW' | 'UPDATED_NEW'
+ReturnConsumedCapacity: 'INDEXES | 'TOTAL' | 'NONE'
+ReturnItemCollectionMetrics: 'SIZE' | 'NONE'
+
 userSettings: (Object) Specifies any setting that you want to set for every DynamoDB API call.
-*/
+**/
 DynaDoc.prototype.setSettings = function setSettings(userSettings) {
     //Go through their user settings object and pull them into our settings.
     /*
@@ -170,11 +180,13 @@ DynaDoc.prototype.setSettings = function setSettings(userSettings) {
     }
 }
 
-/*
+/**
 Promisfied Put Item API call.
-The item must have the primary key already inside it
+The item must have the primary key (and Range key if applicable) already inside it
 otherwise DyanmoDB will throw an error.
-*/
+
+@param document (Object): The object add to the DynamoDB table (should include all necessary keys).
+**/
 DynaDoc.prototype.putItem = function* putItem(item) {
     var d = Q.defer();
     var payload = generatePayload.call(this);
@@ -188,14 +200,14 @@ DynaDoc.prototype.putItem = function* putItem(item) {
     return d.promise;
 };
 
-/*
+/**
 Get the item with Key value passed in.
 
-Key: Should be an object, that represents the following structure.
+@param Key: Should be an object, that represents the following structure.
 {"PrimeKeyName":"MyHashKey"}
 PrimeKeyName is the name of the primary key field in the DynamoDB table.
 MyHashKey is the actual key to search the table for.
-*/
+**/
 DynaDoc.prototype.getItem = function* getItem(key) {
     var d = Q.defer();
     var payload = generatePayload.call(this);
@@ -207,11 +219,10 @@ DynaDoc.prototype.getItem = function* getItem(key) {
     });
     return d.promise;
 }
-
-/*
+/**
 Query call on a dynamoDB table. Query a index of some sort.
-params: The completed call object for the DynamoDB Document Client Query API.
-*/
+@param params: The completed call object for the DynamoDB Document Client Query API.
+**/
 DynaDoc.prototype.query = function* query(params) {
     //Given the entire params needed from the DynamoDB Doc client.
     var d = Q.defer();
@@ -224,23 +235,23 @@ DynaDoc.prototype.query = function* query(params) {
 }
 
 
-/*
-Query One item given the three main parameters.
-Assistant so the user does not have to make the payload for themselves.
+/**
+Query call that only takes the three main arguments.
+Simple assistant so the user does not have to make the payload for themselves.
 
-indexName: (String) The name of the Index that this query will search through.
-keyConditionExpression: (String)The Condition expression that is used to search through the index.
+ @param indexName: (String) The name of the Index that this query will search through.
+ @param keyConditionExpression: (String)The Condition expression that is used to search through the index.
   Examples:
   "#hashKey = :hashkey and #rangeKey > :rangeKey"
   "#hashKey = :hashkey and #rangeKey = :rangeKey"
   "#hashKey = :hashkey"
 
-expressionAttributeValues: (Object) Key: Variable name in key Condition Expression, Value: The value of the variable.
-expressionAttributeNames: (Object) Key: Hash Variable name in the key Condition Expression, Value: The Name of the Hash attribute
+ @param expressionAttributeValues: (Object) Key: Variable name in key Condition Expression, Value: The value of the variable.
+ @param expressionAttributeNames: (Object) Key: Hash Variable name in the key Condition Expression, Value: The Name of the Hash attribute
 
-This method is not inteliigent and requires the user to provide each structure of the call.
+This method is not intelligent and requires the user to provide each structure of the call.
 use smartQuery() to use DynaDoc's intelligent system.
-*/
+**/
 DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpression, expressionAttributeValues, expressionAttributeNames) {
         var payload = generatePayload.call(this);
         payload.IndexName = indexName;
@@ -250,35 +261,37 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
 
         return yield this.query(payload);
     }
-    /*
-        Function that automatically generates the necessary restful information for the
-        Table in order to make requests to DynamoDB. This function makes it easier for
-        developers to work with DynamoDB by giving them simple functions to query their
-        tables. This is the pride and joy of DynaDoc.
+    /**
+    Function that automatically generates the necessary restful information for the
+    Table in order to make requests to DynamoDB. This function makes it easier for
+    developers to work with DynamoDB by giving them simple functions to query their
+    tables. This is the pride and joy of DynaDoc.
 
-        Requires: Smart functions to be enabled after the tableDescription is filled out and called.
+    Requires: Smart functions to be enabled after the tableDescription is filled out and called.
 
-        Notes: Given the IndexName, we can pull out other details and make the api call for them.
-        This assumes there is a range value, if there is no range value then you should
-        use the standard get method for standalone hashes.
+    Notes: Given the IndexName, we can pull out other details and make the api call for them.
+    This assumes there is a range value, if there is no range value then you should
+    use the standard get method for standalone hashes.
 
-        @param indexName: (String) The index name (typically ending in '-index')
-        @param hashValue: The value for the hash in whatever datatype the index hash is in.
-        @param rangeValue: The range value for the index to compare or search for. (Optional)
-        @param action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
-        @param limit: An integer limit to the number of objects to return.
+    @param indexName: (String) The index name (typically ending in '-index')
+    @param hashValue: The value for the hash in whatever datatype the index hash is in.
+    @param rangeValue: The range value for the index to compare or search for. (Required if Index Requires it)
+    @param action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
+    @param limit: An integer limit to the number of objects to return. (Optional, Default = 10)
 
-        Notes: I tested performance of time in this function by measuring execution time and completion.
-        The method prepration for smart query is roughly 2-3ms
-        The total call time (largely dependent on DynamoDB response and network latency): 70-120ms
-        The actual benefit for saving smart queries is almost pointless in time (unless it saves memory). Time difference: -1ms to 1ms
+    @returns promise: Result of the query to DynamoDB.
 
-        @TODO Support BETWEEN calls (two range values).
-        To support BETWEEN calls, we will need another Rangevalue.
-        The action is always "AND" for BETWEEN calls.
-        This may require a smarter way to handle these parameters.
+    Notes: I tested performance of time in this function by measuring execution time and completion.
+    The method prepration for smart query is roughly 2-3ms
+    The total call time (largely dependent on DynamoDB response and network latency): 70-120ms
+    The actual benefit for saving smart queries is almost pointless in time (unless it saves memory). Time difference: -1ms to 1ms
 
-    */
+    @TODO Support BETWEEN calls (two range values).
+    To support BETWEEN calls, we will need another Rangevalue.
+    The action is always "AND" for BETWEEN calls.
+    This may require a smarter way to handle these parameters.
+
+    **/
 DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
@@ -315,13 +328,19 @@ DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeV
     return d.promise;
 }
 
-/*
+/**
     The smart query Between call. Will return items from the indexName that are
     between the given lowerRangeValue and the upperRangeValue.
-    You can pass in a intger to limit the number of items that are returned.
+    You can pass in an Integer to limit the number of items that are returned.
+
+    @param indexName: (String) The index name (typically ending in '-index')
+    @param hashValue: The value for the hash in whatever datatype the index hash is in.
+    @param lowerRangeValue: The lower range value for the index to compare or search for.
+    @param upperRangeValue: The upper range value for the BETWEEN query.
+    @param limit (Integer): Limit the number of documents to return (optional, Default = 10);
 
     @TODO Integrate thing into smartQuery (since it is a query operation)
-*/
+**/
 DynaDoc.prototype.smartBetween = function* smartBetween(indexName, hashValue, lowerRangeValue, upperRangeValue, limit) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
@@ -349,10 +368,10 @@ DynaDoc.prototype.smartBetween = function* smartBetween(indexName, hashValue, lo
 
 }
 
-/*
+/**
 Delete an item from the Table.
-key: (Object) Keyvalue for Primary Hash and Range Hash.
-*/
+ @param key: (Object) Keyvalue for Primary Hash and Range Hash.
+**/
 DynaDoc.prototype.deleteItem = function* deleteItem(key) {
     var d = Q.defer();
     var payload = generatePayload.call(this);
@@ -364,7 +383,7 @@ DynaDoc.prototype.deleteItem = function* deleteItem(key) {
     return d.promise;
 }
 
-/*
+/**
 Update an item in the DynamoDB table.
 params: (Object) Follow the
 //Example update params.
@@ -381,7 +400,7 @@ var params = {
   }
 };
 
-*/
+**/
 DynaDoc.prototype.updateItem = function* updateItem(params) {
     var d = Q.defer();
     this.dynamoDoc.update(params, function(err, res) {
@@ -391,12 +410,12 @@ DynaDoc.prototype.updateItem = function* updateItem(params) {
     return d.promise;
 }
 
-/*
+/**
 Function will make a call to get details about a table.
 
 We can pull index and hashkey information out of the response.
 Everything is inside of the: Table Key
-*/
+**/
 DynaDoc.prototype.describeTable = function* describeTable(tableName) {
     //Lets get some details about the dynamoDB table.
     var d = Q.defer();
@@ -416,7 +435,7 @@ DynaDoc.prototype.describeTable = function* describeTable(tableName) {
 }
 
 // --------------------- Begin the Smart features!!!! ------------------------------
-/*
+/**
 Creates a payload given the data from the user and describeTable method.
 Requires that you pass Settings and payload. It does not make any changes to Settings,
 but will add query keys to the payload.
@@ -433,7 +452,7 @@ all we really have to do is change the ExpressionAttributeValues's values! :D
 The other option to this problem would be to open up some form of this method (at least return
 value). This way a developer could create the query once and change the values themselves.
 Generating the smart query everytime for the same call is wasteful.
-*/
+**/
 function createSmartPayload(payload, settings, indexName, hashValue, rangeValue, action, upperRangeValue) {
     //Get the Indexes object from settings (contains all the indexes).
     var Indexes = getIndexes(settings);
@@ -532,9 +551,9 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
 
 
 }
-/*
+/**
     Get the Indexes object for
-*/
+**/
 function getIndexes(settings) {
     if (!settings.Indexes) {
         settings.Indexes = {};
@@ -542,24 +561,24 @@ function getIndexes(settings) {
     return settings.Indexes;
 }
 
-/*
+/**
     Get the saved smart queiries object in settings.
-*/
+**/
 function getSavedQueriesObject(settings) {
     if (!settings.savedQueries) {
         settings.savedQueries = {};
     }
     return settings.savedQueries;
 }
-/*
+/**
  Generate a string that will be used as the key (not a real hash)
-*/
+**/
 function getQueryHash(indexName, action) {
     return indexName + action;
 }
-/*
+/**
     Check if a smart query already exists and returns the payload object.
-*/
+**/
 function getSavedQuery(settings, indexName, action) {
 
     var queryHash = getQueryHash(indexName, action);
@@ -570,10 +589,10 @@ function getSavedQuery(settings, indexName, action) {
     //Return undefined if we did not find the hash.
     return undefined;
 }
-/*
+/**
     Save a smart query to be used later so it does not have to be generated.
     Pass in action (easier than parsing the payload for the action.)
-*/
+**/
 function saveQuery(settings, payload, action) {
     //We can pull the necessary details from the payload.
     var indexName = payload.IndexName;
@@ -587,10 +606,10 @@ function saveQuery(settings, payload, action) {
     savedQueries[queryHash] = payload;
 }
 
-/*
+/**
 Parses out the primary Key Schema for the Table.
 Adds the indexes to the Indexes section of the DynaDoc settings.
-*/
+**/
 function parsePrimaryKeySchema(settings, primaryKeySchema) {
     var Indexes = getIndexes(settings);
     Indexes[PRIMARY_INDEX_PLACEHOLDER] = {
@@ -609,10 +628,10 @@ function parsePrimaryKeySchema(settings, primaryKeySchema) {
 
 }
 
-/*
+/**
 Parses the Secondary Key Schema Arrays into a hash and Range key (if available).
 Returns: Boolean, True if succeessfully parsed and added, false otherwise.
-*/
+**/
 function parseSecondaryKeySchema(settings, secondaryIndexArray) {
     var temp = {};
     var indexes = getIndexes(settings);
@@ -637,10 +656,10 @@ function parseSecondaryKeySchema(settings, secondaryIndexArray) {
     }
     return true;
 }
-/*
+/**
 Simple funciton to conver the attribute definitions array into an easily accessable
 object for accessing attribute Type.
-*/
+**/
 function convertAttributeDefinitionsToObject(attributeDefinitionsArray) {
     //Lets conver the Attribute definitions into a object that we can easily use.
     var AttributeDefinitionsObject = {};
@@ -652,10 +671,10 @@ function convertAttributeDefinitionsToObject(attributeDefinitionsArray) {
     return AttributeDefinitionsObject;
 }
 
-/*
+/**
 Parse the array in the TableObject that tells us what the datatype for each
 index is.
-*/
+**/
 function parseAttributeDefinitions(settings, attributeDefinitionsArray) {
     //Given the attribute definitions array, lets go through and match it to our indexes.
     var temp = {};
@@ -681,12 +700,12 @@ function parseAttributeDefinitions(settings, attributeDefinitionsArray) {
     }
 }
 
-/*
+/**
 Given the value of the "Table" key from a DescriptionTable response, this function
 will parse the important data out for DynaDoc to go through and use for the table.
 This will be a challenge, but would be an amazing feature.
 @TODO Use attribute definitions in other methods to check index values to ensure they are correct (Optional).
-*/
+**/
 function parseTableDescriptionResponse(settings, TableObject) {
     if (!TableObject) {
         throw new Error('ERROR: TableObject is not defined! No way to parse it!');
@@ -724,10 +743,5 @@ function parseTableDescriptionResponse(settings, TableObject) {
     //Now that we have all the indexes, we can setup the attribute values and know what each index should be.
     parseAttributeDefinitions(settings, TableObject.AttributeDefinitions);
 }
-
-/*
-
-*/
-//DynaDoc.prototype.
 
 module.exports = DynaDoc;
