@@ -29,6 +29,7 @@ var AWS = require('aws-sdk');
 AWS.config.update({'region':'<YOUR REGION HERE>'});
 var DynaDoc = require('dynadoc')(
 var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
+
 //Required in order to use the 'smart' methods of DynaDoc.
 dynaClient.describeTable('<TABLE_NAME>');
 ```
@@ -122,7 +123,7 @@ DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you
 
 ### Contribution guidelines ###
 
-* DynaDoc requires mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or break other tests.
+* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or break other tests.
 * All pull requests are reviewed and will be merged once approved by the author or repository authorities.
 * DynaDoc requires detailed comments and descriptions of functions and lines. You should throughly test functionality and produce the leanest code possible. I am happy to work with you in order to help improve and implement new features and code.
 
@@ -132,7 +133,7 @@ Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or
 
 * Evan Boucher
 * Please open issues if you discover a problem or to request a new feature.
-* Contributions are welcome. Please create a submit a pull request.
+* Contributions are welcome. Please create a pull request.
 
 DynaDoc is Open Source and authored by Evan Boucher.
 
@@ -154,6 +155,29 @@ The current list of things that need to be done next.
 
 
 ### License ###
-CPAL-1.0
+Released under the terms of the CPAL-1.0 License.
 
-A short description of what is required will be placed here soon.
+CPAL-1.0 allows you to make changes, use commercially, and distribute DynaDoc with a few requirements. If you modify any file of DynaDoc, you must released the modified files under the CPAL-1.0 license and release the source. If you want to use DynaDoc, we ask that you give credit to Mohu for the use of DynaDoc in your project. This is best done by including the following three lines on/in your product. If your product has a Graphical User Interface of some sort, we ask that you put these three lines somewhere an end user has access to them.
+
+```
+DynaDoc powered by Mohu
+Copyright(c) 2015 Mohu Inc.
+http://www.gomohu.com
+```
+
+When possible please make the URL a hyper link.
+It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution. 
+
+This site gives good overview of the license (this is not legal advice!): [CPAL-1.0](https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary)
+
+Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider this legal advice in any sense. Thanks! 
+
+---
+Software distributed under the License is distributed on an “AS IS” basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
+the specific language governing rights and limitations under the License.
+
+The Original Code is DynaDoc.
+
+The Initial Developer of the Original Code is Evan Boucher.
+Copyright (c) Mohu Inc.  All Rights Reserved.
