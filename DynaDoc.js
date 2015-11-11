@@ -45,8 +45,6 @@ Not yet released to NPM
 
 //Q the promised library.
 var Q = require('q');
-//Validation library (Currently Not Used)
-var Joi = require('Joi');
 
 const PAYLOAD_HASH_NAME_KEY = "#hName";
 const PAYLOAD_HASH_VALUE_KEY = ":hValue";

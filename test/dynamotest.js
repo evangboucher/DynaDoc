@@ -25,8 +25,6 @@ purposes.
 @author: Evan Boucher
 @copyright: Mohu Inc.
 */
-var koa = require('koa');
-
 
 var TABLE_NAME = "DynamoTest";
 //Generator library.
@@ -52,7 +50,7 @@ This is intended to be an example only. You will need to create it in your test 
 AWS.config.loadFromPath('test/awscreds.json');
 
 
-var DynoDoc = require('../DynaDoc');
+var DynoDoc = require('../dynadoc');
 //Note: Still need to call DescribeTable(TABLE_NAME) in order to setup the smart features.
 var dynaDoc = new DynoDoc(AWS, TABLE_NAME);
 
@@ -102,7 +100,7 @@ co(function* putItemGenerator() {
     console.log('Put item is about to be called.')
 
     try {
-        res = yield dynaDoc.putItem({"CustomerID":"Test2",    
+        res = yield dynaDoc.putItem({"CustomerID":"Test2",
             "timestamp": [{
                 "time": "2015-08-11T21:31:32.338Z",
                 "value": 76

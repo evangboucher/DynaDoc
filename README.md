@@ -8,7 +8,8 @@ DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript. 
 Current Version: 0.0.1
 
 Quick Notes:
-1. DynaDoc is dependent on the AWS SDK and requires it through npm install.
+1. DynaDoc is dependent on the AWS SDK and requires it through npm install. The AWS-SDK is massive, but if you are using DynamoDB then
+it will make sense to have the SDK. Hopefully, we can come up with a way to minimize this dependency.
 
 ## Getting started ##
 
@@ -166,11 +167,11 @@ http://www.gomohu.com
 ```
 
 When possible please make the URL a hyper link.
-It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution. 
+It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution.
 
 This site gives good overview of the license (this is not legal advice!): [CPAL-1.0](https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary)
 
-Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider this legal advice in any sense. Thanks! 
+Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider this legal advice in any sense. Thanks!
 
 ---
 Software distributed under the License is distributed on an “AS IS” basis,
