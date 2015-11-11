@@ -91,9 +91,7 @@ var response = yield dynaDoc.smartQuery("GlobalSecondary-index","GlobalHash", "G
 
 # API Documentation #
 
-More details about specific functions and abilities will be below.
-
-<@TODO Fill in the details about DynaDoc API.>
+Please visit the Wiki for API details: [DynaDoc Wiki](https://github.com/evangboucher/DynaDoc/wiki/API)
 
 
 
@@ -103,11 +101,11 @@ More details about specific functions and abilities will be below.
 ### Configuration ###
 DynaDoc can be configured by the following methods.
 
-### describeTable('<TableName>'); ###
+### describeTable('\<TableName\>'); ###
 
 the describeTable method will query the table description and parse the response. The response is parsed into a settings object that contains all the important details about the table and its indexes (names, data types, hash and/range range keys, etc.). This method essentially resets the DynaDoc object to work with the default settings for the given TableName.
 
-### setSettings(<SettingsObject>); ###
+### setSettings({\<SettingsObject\>}); ###
 
 setSettings will allow you to add default values to every payload. Currently the following settings are supported (other settings will be ignored! IE. You cannot add custom settings!):
 
