@@ -4,7 +4,7 @@ NOTICE: DynaDoc is not yet ready for production. Every piece of this project is 
 
 DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript. DynaDoc is a promise-based DocumentClient API that is able to parse DynamoDB table's description and generates payloads dynamically. DynaDoc builds directly off of the DynamoDB Document Client (simply promising the original DynamoDB DocumentClient API) with some smart parsing features. Normally the DynamoDB requires a fairly large JSON payload with a lot of repetitive data. DynaDoc tries to make it easier and abstract this payload generation away from the developer.
 
-Current Version: 0.0.1
+Current Version: 0.1.1
 
 Quick Notes:
 1. DynaDoc is dependent on the AWS SDK and requires it through npm install. The AWS-SDK is massive, but if you are using DynamoDB then
@@ -43,7 +43,7 @@ var DynaDoc = require('dynadoc')
 var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
 
 //Required in order to use the 'smart' methods of DynaDoc.
-dynaClient.describeTable('<TABLE_NAME>');
+dynaClient.describeTable('<TABLE_NAME>'); //Or leave blank to use the <DynamoDBTableName> passed in above 
 ```
 
 Examples of using DynaDoc:
@@ -108,7 +108,7 @@ DynaDoc can be configured by the following methods.
 
 ### describeTable('\<TableName\>'); ###
 
-the describeTable method will query the table description and parse the response. The response is parsed into a settings object that contains all the important details about the table and its indexes (names, data types, hash and/range range keys, etc.). This method essentially resets the DynaDoc object to work with the default settings for the given TableName.
+the describeTable method will query the table description and parse the response. The response is parsed into a settings object that contains all the important details about the table and its indexes (names, data types, hash and/range range keys, etc.). This method essentially resets the DynaDoc object to work with the default settings for the given TableName. If TableName is null or undefined, then the table name that the dynaDoc object was created with will be used.
 
 ### setSettings({\<SettingsObject\>}); ###
 
@@ -173,7 +173,7 @@ http://www.gomohu.com
 When possible please make the URL a hyper link.
 It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution.
 
-This site gives a good overview of the license (this is not legal advice!): 
+This site gives a good overview of the license (this is not legal advice!):
 <a href="https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary" target="_blank">CPAL-1.0</a>
 
 Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider the above sentences legal advice for any reason. Thanks!

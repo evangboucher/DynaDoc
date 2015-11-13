@@ -45,15 +45,15 @@ Not yet released to NPM
 
 //Q the promised library.
 var Q = require('q');
+var path = require('path');
+const LIB_FOLDER = __dirname + "/lib/";
 
-const PAYLOAD_HASH_NAME_KEY = "#hName";
-const PAYLOAD_HASH_VALUE_KEY = ":hValue";
-const PAYLOAD_RANGE_NAME_KEY = "#rName";
-const PAYLOAD_RANGE_VALUE_KEY = ":rValue";
-const PAYLOAD_RANGE_UPPER_NAME_KEY = "#rUValue";
-const PAYLOAD_RANGE_UPPER_VALUE_KEY = ":rUValue";
-
-const PRIMARY_INDEX_PLACEHOLDER = "PrimaryIndex";
+//Get the DynaDoc utilities.
+var Util = require(path.join(LIB_FOLDER, "util"));
+//Helper that holds the logic of generating a smart query payload.
+var SmartQueryHelper = require(path.join(LIB_FOLDER, "smartQuery"));
+//Helper that parses the describe table response and saves its data.
+var DescribeTableHelper = require(path.join(LIB_FOLDER, "describeTable"));
 
 /*
 Default settings for the DynaDoc module.
@@ -94,15 +94,13 @@ var DynaDoc = function DynaDoc(AWS, tableName) {
     The table name that this doc client will be accessing.
     For simplicity.
     */
-    this.PrimaryIndexName = PRIMARY_INDEX_PLACEHOLDER;
+    this.PrimaryIndexName = Util.PRIMARY_INDEX_PLACEHOLDER;
 
     this.dynadoc = {};
     this.settings = DEFAULT_SETTINGS;
     this.settings.TableName = tableName;
 
 }
-
-
 
 /**
 Simple error checking to reuse some code.
@@ -113,6 +111,7 @@ function errorCheck(err, d) {
         throw err;
     }
 }
+
 /**
 A function that generates a generic payload from the
 Settings passed in at creation.
@@ -132,6 +131,7 @@ function generatePayload() {
 
     return payload;
 }
+
 /**
 Settings for the DynaDoc client to use.
 
@@ -209,20 +209,20 @@ PrimeKeyName is the name of the primary key field in the DynamoDB table.
 MyHashKey is the actual key to search the table for.
 **/
 DynaDoc.prototype.getItem = function* getItem(key) {
-    var d = Q.defer();
-    var payload = generatePayload.call(this);
+        var d = Q.defer();
+        var payload = generatePayload.call(this);
 
-    payload.Key = key;
-    this.dynamoDoc.get(payload, function(err, res) {
-        errorCheck(err, d);
-        d.resolve(res);
-    });
-    return d.promise;
-}
-/**
-Query call on a dynamoDB table. Query a index of some sort.
-@param params: The completed call object for the DynamoDB Document Client Query API.
-**/
+        payload.Key = key;
+        this.dynamoDoc.get(payload, function(err, res) {
+            errorCheck(err, d);
+            d.resolve(res);
+        });
+        return d.promise;
+    }
+    /**
+    Query call on a dynamoDB table. Query a index of some sort.
+    @param params: The completed call object for the DynamoDB Document Client Query API.
+    **/
 DynaDoc.prototype.query = function* query(params) {
     //Given the entire params needed from the DynamoDB Doc client.
     var d = Q.defer();
@@ -242,7 +242,7 @@ http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.h
 
 Note: You must provide table names in the params.
 **/
-DynaDoc.prototype.batchGet = function *batchGet(params) {
+DynaDoc.prototype.batchGet = function* batchGet(params) {
     var d = Q.defer();
     this.dynamoDoc.batchGet(params, function(err, res) {
         errorCheck(err, d);
@@ -259,7 +259,7 @@ http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.h
 
 Note: You must provide table names in the params.
 **/
-DynaDoc.prototype.batchWrite = function *batchWrite(params) {
+DynaDoc.prototype.batchWrite = function* batchWrite(params) {
     var d = Q.defer();
     this.dynamoDoc.batchWrite(params, function(err, res) {
         errorCheck(err, d);
@@ -274,7 +274,7 @@ Promise based scan call.
 Please see the AWS SDK reference for scan:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
 **/
-DynaDoc.prototype.scan = function *scan(params) {
+DynaDoc.prototype.scan = function* scan(params) {
     var d = Q.defer();
     this.dynamoDoc.scan(params, function(err, res) {
         errorCheck(err, d);
@@ -289,7 +289,7 @@ Promise based createSet call.
 Please see the AWS SDK reference for createSet:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#createSet-property
 **/
-DynaDoc.prototype.createSet = function *createSet(params) {
+DynaDoc.prototype.createSet = function* createSet(params) {
     var d = Q.defer();
     this.dynamoDoc.createSet(params, function(err, res) {
         errorCheck(err, d);
@@ -359,21 +359,20 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
 DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
-    if (!(getIndexes(this.settings)[indexName])) {
+    if (!(Util.getIndexes(this.settings)[indexName])) {
         throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
     }
-
     var payload = generatePayload.call(this);
     //Lets generate the response for them with these values.
     if (arguments.length === 2) {
         //Pass undefined in so it will skip the range value.
-        payload = createSmartPayload(payload, this.settings, indexName, hashValue, undefined, undefined);
+        payload = SmartQueryHelper.createSmartPayload(payload, this.settings, indexName, hashValue, undefined, undefined);
     } else if (arguments.length === 3) {
         //Pass undefined in so it will skip the range value.
-        payload = createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, undefined);
+        payload = SmartQueryHelper.createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, undefined);
     } else if (arguments.length >= 4) {
         //All arguments provided so we parse it like normal.
-        payload = createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, action);
+        payload = SmartQueryHelper.createSmartPayload(payload, this.settings, indexName, hashValue, rangeValue, action);
 
     } else {
         //We should throw some error because the user is miss using the function.
@@ -408,14 +407,14 @@ DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeV
 DynaDoc.prototype.smartBetween = function* smartBetween(indexName, hashValue, lowerRangeValue, upperRangeValue, limit) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
-    if (!(getIndexes(this.settings)[indexName])) {
+    if (!(Util.getIndexes(this.settings)[indexName])) {
         throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
     }
 
     var payload = generatePayload.call(this);
     if (arguments.length >= 4) {
         //All arguments provided so we parse it like normal.
-        payload = createSmartPayload(payload, this.settings, indexName, hashValue, lowerRangeValue, undefined, upperRangeValue);
+        payload = SmartQueryHelper.createSmartPayload(payload, this.settings, indexName, hashValue, lowerRangeValue, undefined, upperRangeValue);
 
     } else {
         throw new Error('smartBetween(): Not enough arguments to do a BETWEEN query.');
@@ -477,11 +476,14 @@ DynaDoc.prototype.updateItem = function* updateItem(params) {
 /**
 Function will make a call to get details about a table.
 
+@params tableName (string): The name of the table to parse. (Optional, Default:
+ The name of the table DynaDoc was initialized with)
+
 We can pull index and hashkey information out of the response.
 Everything is inside of the: Table Key
 **/
 DynaDoc.prototype.describeTable = function* describeTable(tableName) {
-    if (!tableName) {
+    if (!tableName || arguments.length === 0) {
         tableName = this.settings.TableName;
     }
     //Lets get some details about the dynamoDB table.
@@ -496,125 +498,9 @@ DynaDoc.prototype.describeTable = function* describeTable(tableName) {
         //Lets get this information for us to use!
         //Lets erease the settings object and rebuild it ourselves.
         that.settings = {};
-        parseTableDescriptionResponse(that.settings, res.Table);
+        DescribeTableHelper.parseTableDescriptionResponse(that.settings, res.Table);
     });
     return d.promise;
-}
-
-// --------------------- Begin the Smart features!!!! ------------------------------
-
-
-/**
-Creates a payload given the data from the user and describeTable method.
-Requires that you pass Settings and payload. It does not make any changes to Settings,
-but will add query keys to the payload.
-
-@param upperRangeValue: If defined, then the query generated will be a BETWEEN query.
-
-DevNotes: I implemented a way to save queries, but it is not any faster than recreating
-the queries again.
-
-The other option to this problem would be to open up some form of this method (at least return
-value). This way a developer could create the query once and change the values themselves.
-Generating the smart query everytime for the same call is wasteful.
-**/
-function createSmartPayload(payload, settings, indexName, hashValue, rangeValue, action, upperRangeValue) {
-    //Get the Indexes object from settings (contains all the indexes).
-    var Indexes = getIndexes(settings);
-    //Pull out the index object for the index the user wants to use
-    var indexObject = Indexes[indexName];
-    if (!indexObject) {
-        throw new Error('DynaDoc: IndexName does not exist in Table Description.');
-        return;
-    }
-
-    if (!action) {
-        //No action was defined, so lets always use '='
-        action = "=";
-    }
-    //Check if they gave us a range value, the index may require it. (0  is an acceptable value)
-    if (indexObject.Range && (!rangeValue && (rangeValue != 0))) {
-        //There is a range object and no rangeValue.
-        throw new Error('DynaDoc: The index: ' + indexName + ' requires a Range Value. Please specify one.');
-    }
-
-    //Lets check for already existing smart query
-
-    var smartQuery = getSavedQuery(settings, indexName, action);
-    /*
-    Performance wise, the two methods are about the same. Infact, in some
-    cases, recreating the query every time is faster! (likely the hash algroithm)
-    Lets never save a BETWEEN value for right now...
-    */
-    if (smartQuery && !upperRangeValue) {
-        /*
-        This means we already have the payload in the smartQuery object.
-        This works by the assumption that all of the payload stays the same
-        but the values.
-        */
-        var expressionAttributeValues = smartQuery.ExpressionAttributeValues;
-        if (expressionAttributeValues) {
-            //All is going well, lets set the values.
-            //We may need to set hash and/or range values.
-            expressionAttributeValues[PAYLOAD_HASH_VALUE_KEY] = hashValue;
-            if (rangeValue) {
-                expressionAttributeValues[PAYLOAD_RANGE_VALUE_KEY] = rangeValue;
-            }
-
-            payload = smartQuery;
-            return smartQuery;
-        }
-        //If we do not have the expression Attribute saved, we cannot use this payload!
-        //Do nothing and lets generate it  again...
-
-    }
-
-    //Initialize our variables.
-    var expressionAttributeNames = {};
-    var expressionAttributeValues = {};
-
-    var keyConditionExpression = "";
-    //We need to check if this is a primary index or secondary.
-    if (indexObject.isPrimary) {
-        //This is the primary index then you do not specify an IndexName (default is primary!)
-    } else {
-        payload.IndexName = indexName;
-    }
-
-    //Generate the name expression attributes.
-    expressionAttributeNames[PAYLOAD_HASH_NAME_KEY] = indexObject.Hash.name;
-    expressionAttributeValues[PAYLOAD_HASH_VALUE_KEY] = hashValue;
-
-    //Now generate the keyConditionExpression.
-    //Note: Using '+' to concat strings is the faster way in JavaScript.
-    keyConditionExpression = PAYLOAD_HASH_NAME_KEY + " = " + PAYLOAD_HASH_VALUE_KEY;
-
-    //If we are also including a range value.
-    if (rangeValue) {
-        //Check if the range is a Between or standard range.
-        if (upperRangeValue) {
-            //we need to set it up for a BETWEEN value range. BETWEEN always using "and" as its action.
-            keyConditionExpression += " and " + PAYLOAD_RANGE_NAME_KEY + " BETWEEN " + PAYLOAD_RANGE_VALUE_KEY + " and " + PAYLOAD_RANGE_UPPER_VALUE_KEY;
-            //set the extra Upper value.
-            PAYLOAD_RANGE_UPPER_NAME_KEY
-            //Set the upper value.
-            expressionAttributeValues[PAYLOAD_RANGE_UPPER_VALUE_KEY] = upperRangeValue;
-        } else {
-            //The general Range expression with the user action.
-            keyConditionExpression += " and " + PAYLOAD_RANGE_NAME_KEY + " " + action + " " + PAYLOAD_RANGE_VALUE_KEY;
-        }
-        //Change their values.
-        expressionAttributeNames[PAYLOAD_RANGE_NAME_KEY] = indexObject.Range.name;
-        expressionAttributeValues[PAYLOAD_RANGE_VALUE_KEY] = rangeValue;
-    }
-    payload.KeyConditionExpression = keyConditionExpression;
-    payload.ExpressionAttributeValues = expressionAttributeValues;
-    payload.ExpressionAttributeNames = expressionAttributeNames;
-    //Lets save the query for use later!
-    saveQuery(settings, payload, action);
-    return payload;
-
-
 }
 
 /**
@@ -626,9 +512,11 @@ for the next smartScan call (DynamoDB returns from scanning after the first
 @TODO Implement the smart payload generation.
 **/
 //Not yet implemented, but a place holder for it.
-DynaDoc.prototype.smartScan = function *(){return "Not Yet Implemented!";}
+DynaDoc.prototype.smartScan = function*() {
+    return "Not Yet Implemented!";
+}
 
-function *smartScan() {
+function* smartScan() {
     var d = Q.defer();
     var payload = generatePayload.call(this);
 
@@ -638,199 +526,6 @@ function *smartScan() {
         d.resolve(res);
     });
     return d.promise;
-}
-
-/**
-    Get the Indexes object for
-**/
-function getIndexes(settings) {
-    if (!settings.Indexes) {
-        settings.Indexes = {};
-    }
-    return settings.Indexes;
-}
-
-/**
-    Get the saved smart queiries object in settings.
-**/
-function getSavedQueriesObject(settings) {
-    if (!settings.savedQueries) {
-        settings.savedQueries = {};
-    }
-    return settings.savedQueries;
-}
-/**
- Generate a string that will be used as the key (not a real hash)
-**/
-function getQueryHash(indexName, action) {
-    return indexName + action;
-}
-/**
-    Check if a smart query already exists and returns the payload object.
-**/
-function getSavedQuery(settings, indexName, action) {
-
-    var queryHash = getQueryHash(indexName, action);
-    var savedQueries = getSavedQueriesObject(settings);
-    if (savedQueries[queryHash]) {
-        return savedQueries[queryHash];
-    }
-    //Return undefined if we did not find the hash.
-    return undefined;
-}
-/**
-    Save a smart query to be used later so it does not have to be generated.
-    Pass in action (easier than parsing the payload for the action.)
-**/
-function saveQuery(settings, payload, action) {
-    //We can pull the necessary details from the payload.
-    var indexName = payload.IndexName;
-    if (!indexName) {
-        //the indexName is not defined, this means it is primary.
-        indexName = PRIMARY_INDEX_PLACEHOLDER;
-    }
-    var queryHash = getQueryHash(indexName, action);
-    var savedQueries = getSavedQueriesObject(settings);
-    //Save the payload with its hash.
-    savedQueries[queryHash] = payload;
-}
-
-/**
-Parses out the primary Key Schema for the Table.
-Adds the indexes to the Indexes section of the DynaDoc settings.
-**/
-function parsePrimaryKeySchema(settings, primaryKeySchema) {
-    var Indexes = getIndexes(settings);
-    Indexes[PRIMARY_INDEX_PLACEHOLDER] = {
-        "Hash": {
-            "name": primaryKeySchema[0].AttributeName
-        },
-        "isPrimary": true
-    };
-    //Now we need to see if there is a range key.
-    if (primaryKeySchema.length === 2) {
-
-        Indexes[PRIMARY_INDEX_PLACEHOLDER].Range = {
-            "name": primaryKeySchema[1].AttributeName
-        };
-    }
-
-}
-
-/**
-Parses the Secondary Key Schema Arrays into a hash and Range key (if available).
-Returns: Boolean, True if succeessfully parsed and added, false otherwise.
-**/
-function parseSecondaryKeySchema(settings, secondaryIndexArray) {
-    var temp = {};
-    var indexes = getIndexes(settings);
-    for (var i = 0; i < secondaryIndexArray.length; i++) {
-        temp = secondaryIndexArray[i];
-        /*
-            The structure will allow us to easily create
-            expressions with a given index name.
-        */
-        indexes[temp.IndexName] = {
-            "Hash": {
-                "name": temp.KeySchema[0].AttributeName
-            }
-        }
-        if (temp.KeySchema.length === 2) {
-
-            indexes[temp.IndexName].Range = {
-                "name": temp.KeySchema[1].AttributeName
-            };
-        }
-
-    }
-    return true;
-}
-/**
-Simple funciton to conver the attribute definitions array into an easily accessable
-object for accessing attribute Type.
-**/
-function convertAttributeDefinitionsToObject(attributeDefinitionsArray) {
-    //Lets conver the Attribute definitions into a object that we can easily use.
-    var AttributeDefinitionsObject = {};
-    var temp = {};
-    for (var i = 0; i < attributeDefinitionsArray.length; i++) {
-        temp = attributeDefinitionsArray[i];
-        AttributeDefinitionsObject[temp.AttributeName] = temp.AttributeType;
-    }
-    return AttributeDefinitionsObject;
-}
-
-/**
-Parse the array in the TableObject that tells us what the datatype for each
-index is.
-**/
-function parseAttributeDefinitions(settings, attributeDefinitionsArray) {
-    //Given the attribute definitions array, lets go through and match it to our indexes.
-    var temp = {};
-    var Indexes = getIndexes(settings);
-    var attributeObject = convertAttributeDefinitionsToObject(attributeDefinitionsArray);
-    //We need to pull out all the indexes and go through them.
-    var topIndexNames = Object.keys(Indexes);
-    var tempIndexName = "";
-    var tempObject = {};
-    for (var i = 0; i < topIndexNames.length; i++) {
-        tempIndexName = topIndexNames[i];
-        tempObject = Indexes[tempIndexName];
-
-        if (tempObject.Hash) {
-            //Get the datatype for the hash.
-            tempObject.Hash.datatype = attributeObject[tempObject.Hash.name];
-        }
-        if (tempObject.Range) {
-            //Get the datatype for the range.
-            tempObject.Range.datatype = attributeObject[tempObject.Range.name];
-        }
-
-    }
-}
-
-/**
-Given the value of the "Table" key from a DescriptionTable response, this function
-will parse the important data out for DynaDoc to go through and use for the table.
-This will be a challenge, but would be an amazing feature.
-@TODO Use attribute definitions in other methods to check index values to ensure they are correct (Optional).
-**/
-function parseTableDescriptionResponse(settings, TableObject) {
-    if (!TableObject) {
-        throw new Error('ERROR: TableObject is not defined! No way to parse it!');
-
-    } else if (!settings) {
-        throw new Error('ERROR: Settings is not defined!');
-
-    }
-
-    //Make sure settings reflects this table name.
-    settings.TableName = TableObject.TableName;
-
-    //Lets pull out the primary hash schema.
-    //Array object to describe the primary key (hash with or without Range.) [0] is Primary, [1] is range
-    var PrimaryHashSchema = TableObject.KeySchema;
-    //Array of the LocalSecondaryIndexs that this table has.
-    var LocalSecondaryIndexes = TableObject.LocalSecondaryIndexes;
-    //The global Secondary Indexes available in this table.
-    var GlobalSecondaryIndexes = TableObject.GlobalSecondaryIndexes;
-    //Defines the data type for each index (only defined in this, not inside individual indexe objects for some silly reason).
-    var AttributeDefinitions = TableObject.AttributeDefinitions;
-
-    //Get the primary hash key and range key into indexes.
-    parsePrimaryKeySchema(settings, TableObject.KeySchema);
-
-    //Get LocalSecondaryIndexes setup.
-    if (TableObject.LocalSecondaryIndexes) {
-        parseSecondaryKeySchema(settings, TableObject.LocalSecondaryIndexes);
-    }
-
-    if (TableObject.GlobalSecondaryIndexes) {
-        parseSecondaryKeySchema(settings, TableObject.GlobalSecondaryIndexes);
-    }
-
-    //Now that we have all the indexes, we can setup the attribute values and know what each index should be.
-    parseAttributeDefinitions(settings, TableObject.AttributeDefinitions);
 }
 
 module.exports = DynaDoc;
