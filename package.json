@@ -1,7 +1,7 @@
 {
     "name": "dynadoc",
-    "version": "0.0.1",
-    "description": "An easier and more intelligent way to use DynamoDB.",
+    "version": "0.1.0",
+    "description": "An easier and intelligent way to use DynamoDB.",
     "main": "dynadoc.js",
     "scripts": {
         "test": "node --harmony test/dynamotest.js"

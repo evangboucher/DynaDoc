@@ -234,6 +234,70 @@ DynaDoc.prototype.query = function* query(params) {
     return d.promise;
 }
 
+/**
+Promise based batchGet call.
+@params params (Object): The entire payload for batch get.
+Please see the AWS SDK reference for batchGet:
+http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchGet-property
+
+Note: You must provide table names in the params.
+**/
+DynaDoc.prototype.batchGet = function *batchGet(params) {
+    var d = Q.defer();
+    this.dynamoDoc.batchGet(params, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
+/**
+Promise based batchWrite call.
+@params params (Object): The entire payload for batch write.
+Please see the AWS SDK reference for batchWrite:
+http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property
+
+Note: You must provide table names in the params.
+**/
+DynaDoc.prototype.batchWrite = function *batchWrite(params) {
+    var d = Q.defer();
+    this.dynamoDoc.batchWrite(params, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
+/**
+Promise based scan call.
+@params params (Object): The entire payload for scan.
+Please see the AWS SDK reference for scan:
+http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
+**/
+DynaDoc.prototype.scan = function *scan(params) {
+    var d = Q.defer();
+    this.dynamoDoc.scan(params, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
+/**
+Promise based createSet call.
+@params params (Object): The entire payload for createSet.
+Please see the AWS SDK reference for createSet:
+http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#createSet-property
+**/
+DynaDoc.prototype.createSet = function *createSet(params) {
+    var d = Q.defer();
+    this.dynamoDoc.createSet(params, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
 
 /**
 Query call that only takes the three main arguments.
@@ -417,6 +481,9 @@ We can pull index and hashkey information out of the response.
 Everything is inside of the: Table Key
 **/
 DynaDoc.prototype.describeTable = function* describeTable(tableName) {
+    if (!tableName) {
+        tableName = this.settings.TableName;
+    }
     //Lets get some details about the dynamoDB table.
     var d = Q.defer();
     var payload = {};
@@ -435,6 +502,8 @@ DynaDoc.prototype.describeTable = function* describeTable(tableName) {
 }
 
 // --------------------- Begin the Smart features!!!! ------------------------------
+
+
 /**
 Creates a payload given the data from the user and describeTable method.
 Requires that you pass Settings and payload. It does not make any changes to Settings,
@@ -442,12 +511,8 @@ but will add query keys to the payload.
 
 @param upperRangeValue: If defined, then the query generated will be a BETWEEN query.
 
-@TODO THis is awesome! However, generating this everytime for potentially similar queiries
-may be time wasteful. Simply being able to change the values for an existing query will be
-best!
-I believe this can be done by hashing the index name with the action, storing it in Another
-object, then referencing that object by hash when the same command appears again! This way,
-all we really have to do is change the ExpressionAttributeValues's values! :D
+DevNotes: I implemented a way to save queries, but it is not any faster than recreating
+the queries again.
 
 The other option to this problem would be to open up some form of this method (at least return
 value). This way a developer could create the query once and change the values themselves.
@@ -498,13 +563,12 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
 
             payload = smartQuery;
             return smartQuery;
-        } else {
-            //If we do not have the expression Attribute saved, we cannot use this payload!
-            //Do nothing and lets generate it  again...
         }
-    } else {
-        //No saved query was found.
+        //If we do not have the expression Attribute saved, we cannot use this payload!
+        //Do nothing and lets generate it  again...
+
     }
+
     //Initialize our variables.
     var expressionAttributeNames = {};
     var expressionAttributeValues = {};
@@ -522,6 +586,7 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
     expressionAttributeValues[PAYLOAD_HASH_VALUE_KEY] = hashValue;
 
     //Now generate the keyConditionExpression.
+    //Note: Using '+' to concat strings is the faster way in JavaScript.
     keyConditionExpression = PAYLOAD_HASH_NAME_KEY + " = " + PAYLOAD_HASH_VALUE_KEY;
 
     //If we are also including a range value.
@@ -551,6 +616,30 @@ function createSmartPayload(payload, settings, indexName, hashValue, rangeValue,
 
 
 }
+
+/**
+Smart Scan will generate the payload given values from the user.
+SmartSvan will return a last evaluated item which can be used to as a starting point
+for the next smartScan call (DynamoDB returns from scanning after the first
+1MB is scanned).
+
+@TODO Implement the smart payload generation.
+**/
+//Not yet implemented, but a place holder for it.
+DynaDoc.prototype.smartScan = function *(){return "Not Yet Implemented!";}
+
+function *smartScan() {
+    var d = Q.defer();
+    var payload = generatePayload.call(this);
+
+    //Now we need to generate the smart payload.
+    this.dynamoDoc.scan(payload, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
 /**
     Get the Indexes object for
 **/
