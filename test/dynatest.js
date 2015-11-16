@@ -42,7 +42,29 @@ var testData = require(path.join(__dirname, 'test_data.js'));
 var DynaDoc = require(path.join(ROOT_DIR, "dynadoc.js"));
 //The AWS object to initialize DynaDoc with.
 var AWS = require('aws-sdk');
-AWS.config.loadFromPath(path.join(__dirname, 'awscreds.json'));
+
+//If you want to use a file it is possible, but Travis CI uses env variables.
+//AWS.config.loadFromPath(path.join(__dirname, 'awscreds.json'));
+//Check that we have the necessary env variables.
+var envCheck = false;
+if (process.env.accessKeyId && process.env.secretAccessKey) {
+    console.log('Found env variables!');
+    AWS.config.update({
+        "accessKeyId": process.env.accessKeyId,
+        "secretAccessKey": process.env.secretAccessKey,
+        "region": "us-east-1"
+    })
+    envCheck = true;
+} else {
+    //If you want to use a file it is possible, but Travis CI uses env variables.
+    AWS.config.loadFromPath(path.join(__dirname, 'awscreds.json'));
+    //envCheck = true;
+}
+if (!envCheck) {
+    throw new Error('No secret key was found for DynamoDB. Unable to test.');
+}
+
+
 
 var dynaClient = new DynaDoc(AWS, testData.TABLE_NAME1);
 //Requirement to ensure that dynaclient is setup properly.
@@ -95,7 +117,7 @@ describe("DynaDoc", function() {
 
             return dynaClient.batchWrite(payload).then(function(result) {
                 try {
-
+                    expect(result).to.have.property("UnprocessedItems");
                 } catch (err) {
                     done(err);
                     return;
@@ -210,7 +232,12 @@ describe("DynaDoc", function() {
             //Describe the table.
             var promise = dynaClient.describeTable();
             promise.then(function(result) {
-                expect(result).to.have.property("Table");
+                try {
+                    expect(result).to.have.property("Table");
+                } catch(err) {
+                    done(err);
+                }
+
                 done();
             }, function(err) {
                 done(err);
@@ -219,7 +246,12 @@ describe("DynaDoc", function() {
 
         it("Describe Table should return Table Object.", function(done) {
             dynaClient.describeTable(testData.TABLE_NAME2).then(function(result) {
-                expect(result).to.have.property("Table");
+                try {
+                    expect(result).to.have.property("Table");
+                } catch(err) {
+                    done(err);
+                }
+
                 done();
             }, function(err) {
                 done(err);
