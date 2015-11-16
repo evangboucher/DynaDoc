@@ -35,7 +35,6 @@ var assert = Chai.assert;
 var should = Chai.should();
 var path = require('path');
 var ROOT_DIR = __dirname + "/../";
-console.log('ROot dir is: ' + ROOT_DIR);
 //Pull in the test data we will use.
 var testData = require(path.join(__dirname, 'test_data.js'));
 
@@ -48,7 +47,6 @@ var AWS = require('aws-sdk');
 //Check that we have the necessary env variables.
 var envCheck = false;
 if (process.env.accessKeyId && process.env.secretAccessKey) {
-    console.log('Found env variables!');
     AWS.config.update({
         "accessKeyId": process.env.accessKeyId,
         "secretAccessKey": process.env.secretAccessKey,
