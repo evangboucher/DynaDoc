@@ -35,7 +35,7 @@ var assert = Chai.assert;
 var should = Chai.should();
 var path = require('path');
 var ROOT_DIR = __dirname + "/../";
-
+console.log('ROot dir is: ' + ROOT_DIR);
 //Pull in the test data we will use.
 var testData = require(path.join(__dirname, 'test_data.js'));
 

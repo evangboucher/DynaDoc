@@ -46,7 +46,7 @@ Not yet released to NPM
 //Q the promised library.
 var Q = require('q');
 var path = require('path');
-const LIB_FOLDER = __dirname + "/lib/";
+var LIB_FOLDER = __dirname + "/lib/";
 
 //Get the DynaDoc utilities.
 var Util = require(path.join(LIB_FOLDER, "util"));
@@ -58,7 +58,7 @@ var DescribeTableHelper = require(path.join(LIB_FOLDER, "describeTable"));
 /*
 Default settings for the DynaDoc module.
 */
-const DEFAULT_SETTINGS = {
+var DEFAULT_SETTINGS = {
     ReturnValues: 'NONE',
     ReturnConsumedCapacity: 'NONE',
     ReturnItemCollectionMetrics: 'NONE',
