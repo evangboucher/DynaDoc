@@ -331,7 +331,7 @@ describe("DynaDoc", function() {
                 try {
                     expect(result).to.have.property("Responses");
                     expect(result).to.have.property("UnprocessedKeys");
-                    expect(result.Responses[testData.TABLE_NAME2]).to.have.length(2) //@TODO Finish this test.
+                    expect(result.Responses[testData.TABLE_NAME2]).to.have.length(2);
                 } catch (err) {
                     done(err);
                     return;
@@ -342,4 +342,25 @@ describe("DynaDoc", function() {
             });
         });
     });
+
+    describe('#SmartBatchWrite', function() {
+        it('Write to one table.', function(done) {
+            var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
+            var putItemsObject = {};
+            putItemsObject[testData.TABLE_NAME1] = [testData.t1Data[3],testData.t1Data[2],testData.t1Data[1]];
+            putItemsObject[testData.TABLE_NAME2] = [testData.t2Data[3],testData.t2Data[2],testData.t2Data[1]];
+            
+            return dynaClient.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
+                try {
+                    expect(result).to.have.property("UnprocessedKeys");
+                } catch(err) {
+                    done(err);
+                    return;
+                }
+                done();
+            }, function(err) {
+                done(err);
+            });
+        });
+    })
 });

@@ -55,6 +55,8 @@ var SmartQueryHelper = require(path.join(LIB_FOLDER, "smartQuery"));
 //Helper that parses the describe table response and saves its data.
 var DescribeTableHelper = require(path.join(LIB_FOLDER, "describeTable"));
 
+var SmartBatchWriteHelper = require(path.join(LIB_FOLDER, "smartBatchWrite"));
+
 /*
 Default settings for the DynaDoc module.
 */
@@ -429,6 +431,27 @@ DynaDoc.prototype.smartBetween = function smartBetween(indexName, hashValue, low
     });
     return d.promise;
 
+}
+
+/**
+This function will create the smart payload given the following
+params and send it to DynamoDB. This function only supports PutRequest!
+You cannot delete items using this method!
+AKA: Batch Delete Requests are not yet supported!
+
+@params arrayOfTableNames (Array): Array of the table names that will be
+  affected.
+@params putItemsObject (Object): An object whos Keys are tableNames and values
+   are arrays of objects to put into each table.
+**/
+DynaDoc.prototype.smartBatchWrite = function smartBatchWrite(arrayOfTableNames, putItemsObject) {
+    var d = Q.defer();
+    var payload = SmartBatchWriteHelper.smartBatchWrite(arrayOfTableNames, putItemsObject);
+    this.dynamoDoc.batchWrite(payload, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
 }
 
 /**
