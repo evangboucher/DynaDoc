@@ -43,7 +43,7 @@ var DynaDoc = require('dynadoc')
 var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
 
 //Required in order to use the 'smart' methods of DynaDoc.
-dynaClient.describeTable('<TABLE_NAME>'); //Or leave blank to use the <DynamoDBTableName> passed in above 
+dynaClient.describeTable('<TABLE_NAME>'); //Or pass no params to use the <DynamoDBTableName> passed in above
 ```
 
 Examples of using DynaDoc:
@@ -123,6 +123,11 @@ setSettings will allow you to add default values to every payload. Currently the
 
 ### How to run tests ###
 DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions.
+
+You could setup your own DynamoDB Tables to test this project. The objects that you will need to create the table for are not located in the "test/" directory under test_data.js. Tests can be run by running:
+```
+npm test
+```
 
 
 

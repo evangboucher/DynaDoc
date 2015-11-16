@@ -187,7 +187,7 @@ otherwise DyanmoDB will throw an error.
 
 @param document (Object): The object add to the DynamoDB table (should include all necessary keys).
 **/
-DynaDoc.prototype.putItem = function* putItem(item) {
+DynaDoc.prototype.putItem = function putItem(item) {
     var d = Q.defer();
     var payload = generatePayload.call(this);
     payload.Item = item;
@@ -208,7 +208,7 @@ Get the item with Key value passed in.
 PrimeKeyName is the name of the primary key field in the DynamoDB table.
 MyHashKey is the actual key to search the table for.
 **/
-DynaDoc.prototype.getItem = function* getItem(key) {
+DynaDoc.prototype.getItem = function getItem(key) {
         var d = Q.defer();
         var payload = generatePayload.call(this);
 
@@ -223,7 +223,7 @@ DynaDoc.prototype.getItem = function* getItem(key) {
     Query call on a dynamoDB table. Query a index of some sort.
     @param params: The completed call object for the DynamoDB Document Client Query API.
     **/
-DynaDoc.prototype.query = function* query(params) {
+DynaDoc.prototype.query = function query(params) {
     //Given the entire params needed from the DynamoDB Doc client.
     var d = Q.defer();
     //We assume the params is the whole payload.
@@ -242,7 +242,7 @@ http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.h
 
 Note: You must provide table names in the params.
 **/
-DynaDoc.prototype.batchGet = function* batchGet(params) {
+DynaDoc.prototype.batchGet = function batchGet(params) {
     var d = Q.defer();
     this.dynamoDoc.batchGet(params, function(err, res) {
         errorCheck(err, d);
@@ -259,7 +259,7 @@ http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.h
 
 Note: You must provide table names in the params.
 **/
-DynaDoc.prototype.batchWrite = function* batchWrite(params) {
+DynaDoc.prototype.batchWrite = function batchWrite(params) {
     var d = Q.defer();
     this.dynamoDoc.batchWrite(params, function(err, res) {
         errorCheck(err, d);
@@ -274,7 +274,7 @@ Promise based scan call.
 Please see the AWS SDK reference for scan:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
 **/
-DynaDoc.prototype.scan = function* scan(params) {
+DynaDoc.prototype.scan = function scan(params) {
     var d = Q.defer();
     this.dynamoDoc.scan(params, function(err, res) {
         errorCheck(err, d);
@@ -289,7 +289,7 @@ Promise based createSet call.
 Please see the AWS SDK reference for createSet:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#createSet-property
 **/
-DynaDoc.prototype.createSet = function* createSet(params) {
+DynaDoc.prototype.createSet = function createSet(params) {
     var d = Q.defer();
     this.dynamoDoc.createSet(params, function(err, res) {
         errorCheck(err, d);
@@ -316,14 +316,14 @@ Simple assistant so the user does not have to make the payload for themselves.
 This method is not intelligent and requires the user to provide each structure of the call.
 use smartQuery() to use DynaDoc's intelligent system.
 **/
-DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpression, expressionAttributeValues, expressionAttributeNames) {
+DynaDoc.prototype.queryOne = function queryOne(indexName, keyConditionExpression, expressionAttributeValues, expressionAttributeNames) {
         var payload = generatePayload.call(this);
         payload.IndexName = indexName;
         payload.KeyConditionExpression = keyConditionExpression;
         payload.ExpressionAttributeValues = expressionAttributeValues;
         payload.ExpressionAttributeNames = expressionAttributeNames;
 
-        return yield this.query(payload);
+        return this.query(payload);
     }
     /**
     Function that automatically generates the necessary restful information for the
@@ -356,7 +356,7 @@ DynaDoc.prototype.queryOne = function* queryOne(indexName, keyConditionExpressio
     This may require a smarter way to handle these parameters.
 
     **/
-DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeValue, action, limit) {
+DynaDoc.prototype.smartQuery = function smartQuery(indexName, hashValue, rangeValue, action, limit) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
     if (!(Util.getIndexes(this.settings)[indexName])) {
@@ -404,7 +404,7 @@ DynaDoc.prototype.smartQuery = function* smartQuery(indexName, hashValue, rangeV
 
     @TODO Integrate thing into smartQuery (since it is a query operation)
 **/
-DynaDoc.prototype.smartBetween = function* smartBetween(indexName, hashValue, lowerRangeValue, upperRangeValue, limit) {
+DynaDoc.prototype.smartBetween = function smartBetween(indexName, hashValue, lowerRangeValue, upperRangeValue, limit) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
     if (!(Util.getIndexes(this.settings)[indexName])) {
@@ -435,7 +435,7 @@ DynaDoc.prototype.smartBetween = function* smartBetween(indexName, hashValue, lo
 Delete an item from the Table.
  @param key: (Object) Keyvalue for Primary Hash and Range Hash.
 **/
-DynaDoc.prototype.deleteItem = function* deleteItem(key) {
+DynaDoc.prototype.deleteItem = function deleteItem(key) {
     var d = Q.defer();
     var payload = generatePayload.call(this);
     payload.Key = key;
@@ -464,10 +464,10 @@ var params = {
 };
 
 **/
-DynaDoc.prototype.updateItem = function* updateItem(params) {
+DynaDoc.prototype.updateItem = function updateItem(params) {
     var d = Q.defer();
     this.dynamoDoc.update(params, function(err, res) {
-        errorCheck(err);
+        errorCheck(err, d);
         d.resolve(res);
     });
     return d.promise;
@@ -482,7 +482,7 @@ Function will make a call to get details about a table.
 We can pull index and hashkey information out of the response.
 Everything is inside of the: Table Key
 **/
-DynaDoc.prototype.describeTable = function* describeTable(tableName) {
+DynaDoc.prototype.describeTable = function describeTable(tableName) {
     if (!tableName || arguments.length === 0) {
         tableName = this.settings.TableName;
     }
@@ -512,7 +512,7 @@ for the next smartScan call (DynamoDB returns from scanning after the first
 @TODO Implement the smart payload generation.
 **/
 //Not yet implemented, but a place holder for it.
-DynaDoc.prototype.smartScan = function*() {
+DynaDoc.prototype.smartScan = function smartScan() {
     return "Not Yet Implemented!";
 }
 

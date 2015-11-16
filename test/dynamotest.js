@@ -59,9 +59,8 @@ var dynaClient = new DynoDoc(AWS, TABLE_NAME + "Delete");
 
 var primary_hash = "Test2";
 
-
 co(function* putItemGenerator() {
-
+    console.log('Testing DynaDoc with co script.');
     //Describe the table.
     var res = yield dynaClient.describeTable();
 
@@ -69,6 +68,7 @@ co(function* putItemGenerator() {
     var smartQuery = yield dynaClient.smartQuery("GlobalSecondary-index", "GlobalHash", "GlobalRange", "=", 12);
 
     console.log(JSON.stringify(smartQuery, null, 3));
+
     smartQuery = yield dynaClient.smartQuery("LocalSecondaryIndex-index", "PrimaryHashTest", "SecondaryIndex");
 
     console.log('\nRepeating Call test...');
@@ -80,7 +80,7 @@ co(function* putItemGenerator() {
 
     console.log('Testing BETWEEN.');
     try {
-        smartQuery = yield dynaClient.smartBetween("CustomerID-Date-index", "Test1", 0, 1, 5);
+        smartQuery = yield dynaClient.smartBetween(dynaClient.PrimaryIndexName, "Test3", 100, 105, 5); //"CustomerID-Date-index"
     } catch (err) {
         console.log(err);
         return;

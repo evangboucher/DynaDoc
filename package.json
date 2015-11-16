@@ -1,10 +1,11 @@
 {
     "name": "dynadoc",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "An easier and intelligent way to use DynamoDB.",
     "main": "dynadoc.js",
     "scripts": {
-        "test": "node --harmony test/dynamotest.js"
+        "start": "node --harmony test/dynamotest.js",
+        "test": "mocha test/dynatest.js"
     },
     "keywords": [
         "node",
@@ -12,7 +13,8 @@
         "aws",
         "db",
         "dyna",
-        "doc"
+        "doc",
+        "nosql"
     ],
     "repository": {
         "type": "git",
@@ -31,8 +33,10 @@
         "q": "^1.4.1"
     },
     "devDependencies": {
-        "eslint": "^1.7.3",
+        "chai": "^3.4.1",
+        "chai-as-promised": "^5.1.0",
         "co": "^4.6.0",
+        "eslint": "^1.7.3",
         "install": "^0.1.8"
     }
 }
