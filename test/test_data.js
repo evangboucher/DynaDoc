@@ -31,7 +31,20 @@ var testData = {};
 testData.TABLE_NAME1 = "DynamoTestDelete";
 testData.TABLE_NAME2 = "DynamoTest";
 
+const T1PrimaryHashKeyName = "PrimaryHashKey";
+const T1PrimaryRangeKeyName = "PrimaryRangeKey";
 
+const T2PrimaryHashKeyName = "CustomerID";
+/*
+Currently T2 does not have a range key for the primary index. Left
+for expansion later.
+*/
+const T2PrimaryRangeKeyName = null;
+
+//To create some random integers.
+function randomInt (low, high) {
+    return Math.floor(Math.random() * (high - low) + low);
+}
 
 /*
 Example data items to use for TABLE_NAME2
@@ -91,5 +104,51 @@ testData.t2Data = [{
         "value": -100
     }]
 }];
+
+/*
+Generates the key objects (primary and Range keys) for an object.
+This is dynamic so that should the test data change or be added, we
+do not have to statically change multiple values in the future.
+*/
+testData.generateKeyObjectsTable1 = function generateKeyObjectsTable1(index) {
+    var keyObject = {};
+    keyObject[T1PrimaryHashKeyName] = this.t1Data[index][T1PrimaryHashKeyName];
+    if (T1PrimaryRangeKeyName) {
+        keyObject[T1PrimaryRangeKeyName] = this.t1Data[index][T1PrimaryRangeKeyName];
+    }
+    return keyObject;
+}
+testData.generateKeyObjectsTable2 = function generateKeyObjectsTable2(index) {
+    var keyObject = {};
+    keyObject[T2PrimaryHashKeyName] = this.t2Data[index][T2PrimaryHashKeyName];
+    if (T2PrimaryRangeKeyName) {
+        keyObject[T2PrimaryRangeKeyName] = this.t2Data[index][T2PrimaryRangeKeyName];
+    }
+
+    return keyObject;
+}
+
+/*
+Generates valid key objects for keys that should not exist in the tables.
+*/
+testData.generateNonExistentKeyObjectsTable1 = function generateNonExistentKeyObjectsTable1(index) {
+    var keyObject = {};
+    keyObject[T1PrimaryHashKeyName] = this.t1Data[index][T1PrimaryHashKeyName] + randomInt(0,2500);
+    if (T1PrimaryRangeKeyName) {
+        keyObject[T1PrimaryRangeKeyName] = this.t1Data[index][T1PrimaryRangeKeyName] + randomInt(0,2500);
+    }
+
+    return keyObject;
+}
+
+testData.generateNonExistentKeyObjectsTable2 = function generateNonExistentKeyObjectsTable2(index) {
+    var keyObject = {};
+    keyObject[T2PrimaryHashKeyName] = this.t2Data[index][T2PrimaryHashKeyName] + randomInt(0,2500);
+    if (T2PrimaryRangeKeyName) {
+        keyObject[T2PrimaryRangeKeyName] = this.t2Data[index][T2PrimaryRangeKeyName] + randomInt(0,2500);
+    }
+
+    return keyObject;
+}
 
 module.exports = testData;
