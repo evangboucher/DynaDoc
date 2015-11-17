@@ -56,7 +56,7 @@ if (process.env.accessKeyId && process.env.secretAccessKey) {
 } else {
     //If you want to use a file it is possible, but Travis CI uses env variables.
     AWS.config.loadFromPath(path.join(__dirname, 'awscreds.json'));
-    //envCheck = true;
+    envCheck = true;
 }
 if (!envCheck) {
     throw new Error('No secret key was found for DynamoDB. Unable to test.');
@@ -89,7 +89,7 @@ Template for async promise tests:
 });
 */
 
-/* @TODO Need to setup these test cases! */
+
 describe("DynaDoc", function() {
     this.timeout(DEFAULT_TIMEOUT);
     //Do a big batchwrite first to put all the data in the two tables.
@@ -122,6 +122,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "BatchWrite Failed to write data!");
                 done(err);
             });
         });
@@ -156,6 +157,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "smartQuery failed to get items!");
                 done(err);
             });
         });
@@ -177,6 +179,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "SmartQuery failed to get items!");
                 done(err);
             });
         });
@@ -197,6 +200,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "SmartQuery failed to get primary key items.");
                 done(err);
             });
         })
@@ -219,6 +223,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "SmartBetween failed to get items.");
                 done(err);
             });
         })
@@ -232,12 +237,13 @@ describe("DynaDoc", function() {
             promise.then(function(result) {
                 try {
                     expect(result).to.have.property("Table");
-                } catch(err) {
+                } catch (err) {
                     done(err);
                 }
 
                 done();
             }, function(err) {
+                assert.fail(err, null, "DescribeTable failed to get table details.");
                 done(err);
             });
         });
@@ -246,12 +252,13 @@ describe("DynaDoc", function() {
             dynaClient.describeTable(testData.TABLE_NAME2).then(function(result) {
                 try {
                     expect(result).to.have.property("Table");
-                } catch(err) {
+                } catch (err) {
                     done(err);
                 }
 
                 done();
             }, function(err) {
+                assert.fail(err, null, "DescribeTable Failed to get table Details.");
                 done(err);
             });
         });
@@ -271,6 +278,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "Put Item failed to place the item in the database.");
                 done(err);
             });
         });
@@ -285,6 +293,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "PutItem Failed to place the item in the database.");
                 done(err);
             });
         })
@@ -298,13 +307,14 @@ describe("DynaDoc", function() {
                 try {
                     expect(result).to.have.property("Item");
                     expect(result.Item).to.have.property("timestamp");
-                    expect(result.Item.timestamp[0]).to.have.property("value", 76);
+                    expect(result.Item.timestamp[0]).to.have.property("value", testData.t2Data[0].timestamp[0].value);
                 } catch (err) {
                     done(err);
                     return;
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "GetItem failed to retrieve the item.");
                 done(err);
             });
         });
@@ -338,6 +348,7 @@ describe("DynaDoc", function() {
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "BatchGet failed to get the item(s).");
                 done(err);
             });
         });
@@ -345,22 +356,119 @@ describe("DynaDoc", function() {
 
     describe('#SmartBatchWrite', function() {
         it('Write to one table.', function(done) {
-            var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
+            var tableArray = [testData.TABLE_NAME1];
             var putItemsObject = {};
-            putItemsObject[testData.TABLE_NAME1] = [testData.t1Data[3],testData.t1Data[2],testData.t1Data[1]];
-            putItemsObject[testData.TABLE_NAME2] = [testData.t2Data[3],testData.t2Data[2],testData.t2Data[1]];
-
+            putItemsObject[testData.TABLE_NAME1] = [testData.t1Data[3], testData.t1Data[2], testData.t1Data[1]];
             return dynaClient.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
                 try {
-                    expect(result).to.have.property("UnprocessedItems");
-                } catch(err) {
+                    expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                } catch (err) {
                     done(err);
                     return;
                 }
                 done();
             }, function(err) {
+                assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
                 done(err);
             });
         });
-    })
+
+        it('Write to two tables.', function(done) {
+            var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
+            var putItemsObject = {};
+            putItemsObject[testData.TABLE_NAME1] = [testData.t1Data[3], testData.t1Data[2], testData.t1Data[1]];
+            putItemsObject[testData.TABLE_NAME2] = [testData.t2Data[3], testData.t2Data[2], testData.t2Data[1]];
+
+            return dynaClient.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
+                try {
+                    expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                } catch (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            }, function(err) {
+                assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
+                done(err);
+            });
+        });
+    });
+
+    describe('#SmartBatchGet', function() {
+        it("Get several items from the tables.", function(done) {
+            var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
+            var batchGetKeyObject = {};
+            batchGetKeyObject[testData.TABLE_NAME1] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(2), testData.generateKeyObjectsTable1(1)];
+            batchGetKeyObject[testData.TABLE_NAME2] = [testData.generateKeyObjectsTable2(3), testData.generateKeyObjectsTable2(2), testData.generateKeyObjectsTable2(1)];
+            return dynaClient.smartBatchGet(tableArray, batchGetKeyObject).then(function(result) {
+                try {
+                    expect(result).to.have.property("UnprocessedKeys");
+                    expect(result.UnprocessedKeys).to.be.empty;
+                    expect(result).to.have.property("Responses");
+                    expect(result.Responses).to.have.property(testData.TABLE_NAME2);
+                    expect(result.Responses[testData.TABLE_NAME2]).to.not.be.empty;
+                    expect(result.Responses).to.have.property(testData.TABLE_NAME1);
+                    expect(result.Responses[testData.TABLE_NAME1]).to.not.be.empty;
+                } catch (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            }, function(err) {
+                assert.fail(err, null, "SmartBatchGet Failed to get the items from the database.");
+                done(err);
+            });
+        });
+
+        it('Get Items that do not exist from both tables.', function(done) {
+            var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
+            var batchGetKeyObject = {};
+            batchGetKeyObject[testData.TABLE_NAME1] = [testData.generateNonExistentKeyObjectsTable1(1), testData.generateNonExistentKeyObjectsTable1(2)];
+            batchGetKeyObject[testData.TABLE_NAME2] = [testData.generateNonExistentKeyObjectsTable2(1), testData.generateNonExistentKeyObjectsTable2(2)];
+            return dynaClient.smartBatchGet(tableArray, batchGetKeyObject).then(function(result) {
+                try {
+                    expect(result).to.have.property("UnprocessedKeys");
+                    expect(result.UnprocessedKeys).to.be.empty;
+                    expect(result).to.have.property("Responses");
+                    expect(result.Responses).to.have.property(testData.TABLE_NAME2);
+                    expect(result.Responses[testData.TABLE_NAME2]).to.be.empty;
+                    expect(result.Responses).to.have.property(testData.TABLE_NAME1);
+                    expect(result.Responses[testData.TABLE_NAME1]).to.be.empty;
+                } catch (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            }, function(err) {
+                assert.fail(err, null, "SmarBatchGet Failed to make the query to the database.");
+                done(err);
+            });
+        });
+
+        /*
+        Currently, this test does not work as the error is thrown up.
+        I have not been able to catch it and make the test pass.
+        It will be skipped for now until it actually works.
+        */
+        it.skip('Pass invalid Key Object.', function(done) {
+            var tableArray = [testData.TABLE_NAME1];
+            var batchGetKeyObject = {};
+
+            batchGetKeyObject[testData.TABLE_NAME1] = [{
+                "InvalidKey": 928392
+            }];
+
+            /*
+            batchGetKeyObject[testData.TABLE_NAME1] = [testData.generateNonExistentKeyObjectsTable1(1), testData.generateNonExistentKeyObjectsTable1(2)];
+            */
+            dynaClient.smartBatchGet(tableArray, batchGetKeyObject).then(function(result) {
+                //This is the fail case.
+                done(new Error('DynaDoc SmartBatchGet accepted invalid key data and did not throw an error'));
+            }, function(err) {
+                //Called because the response should fail.
+                done();
+            });
+
+        });
+    });
 });

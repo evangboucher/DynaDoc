@@ -57,6 +57,8 @@ var DescribeTableHelper = require(path.join(LIB_FOLDER, "describeTable"));
 
 var SmartBatchWriteHelper = require(path.join(LIB_FOLDER, "smartBatchWrite"));
 
+var SmartBatchGetHelper = require(path.join(LIB_FOLDER, "smartBatchGet"));
+
 /*
 Default settings for the DynaDoc module.
 */
@@ -448,6 +450,33 @@ DynaDoc.prototype.smartBatchWrite = function smartBatchWrite(arrayOfTableNames, 
     var d = Q.defer();
     var payload = SmartBatchWriteHelper.smartBatchWrite(arrayOfTableNames, putItemsObject);
     this.dynamoDoc.batchWrite(payload, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
+/**
+Makes a request to DynamoDB to batchGet several items at one time. Takes an
+array of TableNames and an object that is mapping TableName to an array of
+object keys to retrieve from the database.
+
+@params arrayOfTableNames (Array<String>): An array of table names that items
+will be added to.
+@params batchGetKeyObject (Object): An object that maps table names to arrays of
+key objects that will be used to retrieve items from DynamoDB Table. This file
+has the following structure:
+{
+    '<TableName>':[
+        {'<HashKey>':'<HashValue>',
+        '<RangeKey>':'<RangeValue>'}, (Repeating for each item to retrieve)
+    ],(Repeating for Each Table)
+}
+**/
+DynaDoc.prototype.smartBatchGet = function smartBatchGet(arrayOfTableNames, batchGetKeyObject) {
+    var d = Q.defer();
+    var payload = SmartBatchGetHelper.createPayload(arrayOfTableNames, batchGetKeyObject);
+    this.dynamoDoc.batchGet(payload, function(err, res) {
         errorCheck(err, d);
         d.resolve(res);
     });
