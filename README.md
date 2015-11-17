@@ -61,8 +61,8 @@ dynaClient.getItem('<PrimaryHashKey>').then(function (err, res) { console.log(JS
 //Using ES6 Generators
 var response = yield dynaClient.getItem('<PrimaryHashKey>');
 
-//Using DynaDoc's smartQuery function.
-var response = yield dynaClient.smartQuery('<IndexName>', '<HashValue>', '<RangeValue>', '<Action>', '<limit>');
+//Using DynaDoc's smartQuery function. //Only the IndexesName and HashValue are required, other options can be left as undefined
+var response = yield dynaClient.smartQuery('<IndexName>', '<HashValue>', '<RangeValue>', '<Action>', '<limit>', {'<AdditionalOptions>':'<Value>'});
 
 
 ```
@@ -143,7 +143,7 @@ npm test
 
 ### Who do I talk to? ###
 
-Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or create an issue in the Issues Tracker here on Bitbucket.
+Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or create an issue in the Issues Tracker here on GitHub.
 
 * Evan Boucher
 * Please open issues if you discover a problem or to request a new feature.
@@ -161,9 +161,8 @@ DynaDoc was made by a developer who loves AWS and needed the best way to access 
 
 ## ToDo List ##
 The current list of things that need to be done next.
-* Current Version: 0.0.1
 
-1. Enable temporary params into smartQuery and smart functions (IE. Ability to change query result item order)
+1. Enable temporary params into all smart functions (IE. Ability to change query result item order) Currently only SmartQuery has this feature.
 1. Add smartUpdate (Big feature)
 1. Add smartScan
 2. Add ability to cache failed calls due to provision capcity limit and retry with exponential backoff.

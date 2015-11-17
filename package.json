@@ -1,6 +1,6 @@
 {
     "name": "dynadoc",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "An easier and intelligent way to use DynamoDB.",
     "main": "dynadoc.js",
     "scripts": {
@@ -8,13 +8,18 @@
         "test": "mocha --harmony test/dynatest.js"
     },
     "keywords": [
-        "node",
         "dynamo",
+        "dynamodb",
+        "dynamo-db",
+        "dynamo-doc",
+        "amazon",
         "aws",
         "db",
+        "database",
         "dyna",
         "doc",
-        "nosql"
+        "nosql",
+        "node"
     ],
     "repository": {
         "type": "git",

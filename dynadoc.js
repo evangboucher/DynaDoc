@@ -100,7 +100,6 @@ var DynaDoc = function DynaDoc(AWS, tableName) {
     */
     this.PrimaryIndexName = Util.PRIMARY_INDEX_PLACEHOLDER;
 
-    this.dynadoc = {};
     this.settings = DEFAULT_SETTINGS;
     this.settings.TableName = tableName;
 
@@ -119,19 +118,26 @@ function errorCheck(err, d) {
 /**
 A function that generates a generic payload from the
 Settings passed in at creation.
+@params settings (Object): The DynaDoc settings object.
+@params existingPayload (Object): A payload object to add default settings to.
 **/
-function generatePayload() {
-    if (!this.settings.TableName) {
+function generatePayload(settings, existingPayload) {
+    if (!settings.TableName) {
         //The table name does not exist, so nothing will work.
         throw new Error('DynaDoc: TableName is not defined.');
     }
+
     var payload = {};
+    //If we already have a payload, lets just append the defaults to it.
+    if (existingPayload) {
+        payload = existingPayload;
+    }
     //Table name is always specified and is required!
-    payload.TableName = this.settings.TableName;
+    payload.TableName = settings.TableName;
 
     //Non required settings.
-    payload.ReturnValues = this.settings.ReturnValue || DEFAULT_SETTINGS.ReturnValue;
-    payload.ReturnConsumedCapacity = this.settings.ReturnConsumedCapacity || DEFAULT_SETTINGS.ReturnConsumedCapacity;
+    payload.ReturnValues = settings.ReturnValue || DEFAULT_SETTINGS.ReturnValue;
+    payload.ReturnConsumedCapacity = settings.ReturnConsumedCapacity || DEFAULT_SETTINGS.ReturnConsumedCapacity;
 
     return payload;
 }
@@ -193,7 +199,7 @@ otherwise DyanmoDB will throw an error.
 **/
 DynaDoc.prototype.putItem = function putItem(item) {
     var d = Q.defer();
-    var payload = generatePayload.call(this);
+    var payload = generatePayload(this.settings);
     payload.Item = item;
     //make the put call with the DynamoDoc client we have.
     this.dynamoDoc.put(payload, function(err, res) {
@@ -214,7 +220,7 @@ MyHashKey is the actual key to search the table for.
 **/
 DynaDoc.prototype.getItem = function getItem(key) {
         var d = Q.defer();
-        var payload = generatePayload.call(this);
+        var payload = generatePayload(this.settings);
 
         payload.Key = key;
         this.dynamoDoc.get(payload, function(err, res) {
@@ -321,7 +327,7 @@ This method is not intelligent and requires the user to provide each structure o
 use smartQuery() to use DynaDoc's intelligent system.
 **/
 DynaDoc.prototype.queryOne = function queryOne(indexName, keyConditionExpression, expressionAttributeValues, expressionAttributeNames) {
-        var payload = generatePayload.call(this);
+        var payload = generatePayload(this.settings);
         payload.IndexName = indexName;
         payload.KeyConditionExpression = keyConditionExpression;
         payload.ExpressionAttributeValues = expressionAttributeValues;
@@ -347,6 +353,8 @@ DynaDoc.prototype.queryOne = function queryOne(indexName, keyConditionExpression
     @param action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
     @param limit: An integer limit to the number of objects to return. (Optional, Default = 10)
 
+    @params additionalOptions (Object): Additional Options for query found in the AWS SDK.
+
     @returns promise: Result of the query to DynamoDB.
 
     Notes: I tested performance of time in this function by measuring execution time and completion.
@@ -360,13 +368,13 @@ DynaDoc.prototype.queryOne = function queryOne(indexName, keyConditionExpression
     This may require a smarter way to handle these parameters.
 
     **/
-DynaDoc.prototype.smartQuery = function smartQuery(indexName, hashValue, rangeValue, action, limit) {
+DynaDoc.prototype.smartQuery = function smartQuery(indexName, hashValue, rangeValue, action, limit, additionalOptions) {
     var d = Q.defer();
     //Lets validate the indexName before we start...
     if (!(Util.getIndexes(this.settings)[indexName])) {
         throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
     }
-    var payload = generatePayload.call(this);
+    var payload = generatePayload(this.settings);
     //Lets generate the response for them with these values.
     if (arguments.length === 2) {
         //Pass undefined in so it will skip the range value.
@@ -385,6 +393,10 @@ DynaDoc.prototype.smartQuery = function smartQuery(indexName, hashValue, rangeVa
 
     if (!limit) {
         limit = this.settings.Limit;
+    }
+    if (additionalOptions) {
+        //If there are additional options, we should merge them into the payload.
+        payload = Util.mergeObject(payload, additionalOptions);
     }
     //Always set the limit.
     payload.Limit = limit;
@@ -415,7 +427,7 @@ DynaDoc.prototype.smartBetween = function smartBetween(indexName, hashValue, low
         throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
     }
 
-    var payload = generatePayload.call(this);
+    var payload = generatePayload(this.settings);
     if (arguments.length >= 4) {
         //All arguments provided so we parse it like normal.
         payload = SmartQueryHelper.createSmartPayload(payload, this.settings, indexName, hashValue, lowerRangeValue, undefined, upperRangeValue);
@@ -499,7 +511,7 @@ Delete an item from the Table.
 **/
 DynaDoc.prototype.deleteItem = function deleteItem(key) {
     var d = Q.defer();
-    var payload = generatePayload.call(this);
+    var payload = generatePayload(this.settings);
     payload.Key = key;
     this.dynamoDoc.delete(payload, function(err, res) {
         errorCheck(err, d);
@@ -580,7 +592,7 @@ DynaDoc.prototype.smartScan = function smartScan() {
 
 function* smartScan() {
     var d = Q.defer();
-    var payload = generatePayload.call(this);
+    var payload = generatePayload(this.settings);
 
     //Now we need to generate the smart payload.
     this.dynamoDoc.scan(payload, function(err, res) {

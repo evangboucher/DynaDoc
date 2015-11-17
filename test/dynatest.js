@@ -132,9 +132,7 @@ describe("DynaDoc", function() {
 
     describe("#Smart Query", function() {
 
-        it("Smart Query with all params.", function(done) {
-
-            var expected;
+        it("Smart Query with all params but additionalOptions", function(done) {
             return dynaClient.smartQuery("GlobalSecondary-index",
                 testData.t1Data[0].GlobalSecondaryHash,
                 testData.t1Data[0].GlobalSecondaryRange,
@@ -151,6 +149,39 @@ describe("DynaDoc", function() {
                     expect(result).to.have.property("Count", 1);
                     expect(result).to.have.property("ScannedCount", 1);
                     assert.strictEqual(result.Items[0].PrimaryHashKey, testData.t1Data[0].PrimaryHashKey);
+                } catch (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            }, function(err) {
+                assert.fail(err, null, "smartQuery failed to get items!");
+                done(err);
+            });
+        });
+        it("SmartQuery with All params (and some additional options)", function(done) {
+
+            return dynaClient.smartQuery("GlobalSecondary-index",
+                testData.t1Data[0].GlobalSecondaryHash,
+                testData.t1Data[0].GlobalSecondaryRange,
+                "=",
+                12, {
+                    "ReturnConsumedCapacity": "TOTAL",
+                    "ScanIndexForward": false
+                }).then(function(result) {
+                /*
+                For some reason returning the promise in above does not
+                catch the assertions that happen when the test fails.
+                For now these try and catch blocks in these functions will
+                suffice for what we need. We can change them later.
+                */
+                try {
+                    expect(result).to.have.property("Items");
+                    expect(result).to.have.property("Count", 1);
+                    expect(result).to.have.property("ScannedCount", 1);
+                    assert.strictEqual(result.Items[0].PrimaryHashKey, testData.t1Data[0].PrimaryHashKey);
+                    //Ensure that the tableName is right and the additional parameters were included.
+                    expect(result.ConsumedCapacity).to.have.property("TableName","DynamoTestDelete");
                 } catch (err) {
                     done(err);
                     return;
