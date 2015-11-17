@@ -372,6 +372,46 @@ describe("DynaDoc", function() {
                 done(err);
             });
         });
+        it('Batch Delete two items from the previous call.', function(done) {
+            var tableArray = [testData.TABLE_NAME1];
+            var deleteItemsObject = {};
+            deleteItemsObject[testData.TABLE_NAME1] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(2)];
+
+            return dynaClient.smartBatchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
+                try {
+                    expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                } catch (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            }, function(err) {
+                assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
+                done(err);
+            });
+        });
+
+        it('Batch Delete from two tables and write to both.', function(done) {
+            var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
+            var putItemsObject = {};
+            putItemsObject[testData.TABLE_NAME1] = [testData.t1Data[3], testData.t1Data[2], testData.t1Data[1]];
+            putItemsObject[testData.TABLE_NAME2] = [testData.t2Data[1]];
+            var deleteItemsObject = {};
+            deleteItemsObject[testData.TABLE_NAME2] = [testData.generateKeyObjectsTable2(3), testData.generateKeyObjectsTable2(2)];
+
+            return dynaClient.smartBatchWrite(tableArray, putItemsObject, deleteItemsObject).then(function(result) {
+                try {
+                    expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                } catch (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            }, function(err) {
+                assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
+                done(err);
+            });
+        })
 
         it('Write to two tables.', function(done) {
             var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
@@ -392,6 +432,7 @@ describe("DynaDoc", function() {
                 done(err);
             });
         });
+
     });
 
     describe('#SmartBatchGet', function() {

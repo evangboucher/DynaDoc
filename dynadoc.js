@@ -437,18 +437,23 @@ DynaDoc.prototype.smartBetween = function smartBetween(indexName, hashValue, low
 
 /**
 This function will create the smart payload given the following
-params and send it to DynamoDB. This function only supports PutRequest!
-You cannot delete items using this method!
-AKA: Batch Delete Requests are not yet supported!
+params and send it to DynamoDB. This function supports both PutRequest and
+DeleteRequest. You must pass seperate objects in as parameters for PutRequests
+and DeleteRequest. Make sure that table names match the object keys.
 
 @params arrayOfTableNames (Array): Array of the table names that will be
   affected.
 @params putItemsObject (Object): An object whos Keys are tableNames and values
    are arrays of objects to put into each table.
+
+@params deleteItemObject (Object) (Optional): An object whos keys are TableNames and values
+   are arrays of key objects of documents that should be removed from that table.
+   The object structure is identical to putItemObject, but the items inside the
+   array should only have the Hash and Range key-values if applicable.
 **/
-DynaDoc.prototype.smartBatchWrite = function smartBatchWrite(arrayOfTableNames, putItemsObject) {
+DynaDoc.prototype.smartBatchWrite = function smartBatchWrite(arrayOfTableNames, putItemsObject, deleteItemObject) {
     var d = Q.defer();
-    var payload = SmartBatchWriteHelper.smartBatchWrite(arrayOfTableNames, putItemsObject);
+    var payload = SmartBatchWriteHelper.smartBatchWrite(arrayOfTableNames, putItemsObject, deleteItemObject);
     this.dynamoDoc.batchWrite(payload, function(err, res) {
         errorCheck(err, d);
         d.resolve(res);
