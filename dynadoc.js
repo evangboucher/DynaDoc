@@ -446,10 +446,15 @@ and DeleteRequest. Make sure that table names match the object keys.
 @params putItemsObject (Object): An object whos Keys are tableNames and values
    are arrays of objects to put into each table.
 
-@params deleteItemObject (Object) (Optional): An object whos keys are TableNames and values
-   are arrays of key objects of documents that should be removed from that table.
-   The object structure is identical to putItemObject, but the items inside the
-   array should only have the Hash and Range key-values if applicable.
+   putItemsObject = {
+   <TableName1>:[{<DocumentToPut},{<DocumentToPut},{<DocumentToPut}, etc...],
+   <TableName2>:[{<DocumentToPut},{<DocumentToPut},{<DocumentToPut}, etc...],
+}
+
+@params deleteItemObject (Object): An object whos keys are TableNames and values
+are arrays of key objects of documents that should be removed from that table.
+The object structure is identical to putItemObject, but the items inside the
+array should only have the Hash and Range key-values if applicable.
 **/
 DynaDoc.prototype.smartBatchWrite = function smartBatchWrite(arrayOfTableNames, putItemsObject, deleteItemObject) {
     var d = Q.defer();
