@@ -590,7 +590,7 @@ DynaDoc.prototype.smartScan = function smartScan() {
     return "Not Yet Implemented!";
 }
 
-function* smartScan() {
+function smartScanHelper() {
     var d = Q.defer();
     var payload = generatePayload(this.settings);
 
