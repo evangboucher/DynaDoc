@@ -118,8 +118,8 @@ function errorCheck(err, d) {
 /**
 A function that generates a generic payload from the
 Settings passed in at creation.
-@params settings (Object): The DynaDoc settings object.
-@params existingPayload (Object): A payload object to add default settings to.
+@param settings (Object): The DynaDoc settings object.
+@param existingPayload (Object): A payload object to add default settings to.
 **/
 function generatePayload(settings, existingPayload) {
     if (!settings.TableName) {
@@ -246,7 +246,7 @@ DynaDoc.prototype.query = function query(params) {
 
 /**
 Promise based batchGet call.
-@params params (Object): The entire payload for batch get.
+@param params (Object): The entire payload for batch get.
 Please see the AWS SDK reference for batchGet:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchGet-property
 
@@ -263,7 +263,7 @@ DynaDoc.prototype.batchGet = function batchGet(params) {
 
 /**
 Promise based batchWrite call.
-@params params (Object): The entire payload for batch write.
+@param params (Object): The entire payload for batch write.
 Please see the AWS SDK reference for batchWrite:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property
 
@@ -280,7 +280,7 @@ DynaDoc.prototype.batchWrite = function batchWrite(params) {
 
 /**
 Promise based scan call.
-@params params (Object): The entire payload for scan.
+@param params (Object): The entire payload for scan.
 Please see the AWS SDK reference for scan:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
 **/
@@ -295,7 +295,7 @@ DynaDoc.prototype.scan = function scan(params) {
 
 /**
 Promise based createSet call.
-@params params (Object): The entire payload for createSet.
+@param params (Object): The entire payload for createSet.
 Please see the AWS SDK reference for createSet:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#createSet-property
 **/
@@ -353,7 +353,7 @@ DynaDoc.prototype.queryOne = function queryOne(indexName, keyConditionExpression
     @param action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
     @param limit: An integer limit to the number of objects to return. (Optional, Default = 10)
 
-    @params additionalOptions (Object): Additional Options for query found in the AWS SDK.
+    @param additionalOptions (Object): Additional Options for query found in the AWS SDK. (Optional, Default: null)
 
     @returns promise: Result of the query to DynamoDB.
 
@@ -453,9 +453,9 @@ params and send it to DynamoDB. This function supports both PutRequest and
 DeleteRequest. You must pass seperate objects in as parameters for PutRequests
 and DeleteRequest. Make sure that table names match the object keys.
 
-@params arrayOfTableNames (Array): Array of the table names that will be
+@param arrayOfTableNames (Array): Array of the table names that will be
   affected.
-@params putItemsObject (Object): An object whos Keys are tableNames and values
+@param putItemsObject (Object): An object whos Keys are tableNames and values
    are arrays of objects to put into each table.
 
    putItemsObject = {
@@ -463,7 +463,7 @@ and DeleteRequest. Make sure that table names match the object keys.
    <TableName2>:[{<DocumentToPut},{<DocumentToPut},{<DocumentToPut}, etc...],
 }
 
-@params deleteItemObject (Object): An object whos keys are TableNames and values
+@param deleteItemObject (Object): An object whos keys are TableNames and values
 are arrays of key objects of documents that should be removed from that table.
 The object structure is identical to putItemObject, but the items inside the
 array should only have the Hash and Range key-values if applicable.
@@ -483,9 +483,9 @@ Makes a request to DynamoDB to batchGet several items at one time. Takes an
 array of TableNames and an object that is mapping TableName to an array of
 object keys to retrieve from the database.
 
-@params arrayOfTableNames (Array<String>): An array of table names that items
+@param arrayOfTableNames (Array<String>): An array of table names that items
 will be added to.
-@params batchGetKeyObject (Object): An object that maps table names to arrays of
+@param batchGetKeyObject (Object): An object that maps table names to arrays of
 key objects that will be used to retrieve items from DynamoDB Table. This file
 has the following structure:
 {
@@ -550,7 +550,7 @@ DynaDoc.prototype.updateItem = function updateItem(params) {
 /**
 Function will make a call to get details about a table.
 
-@params tableName (string): The name of the table to parse. (Optional, Default:
+@param tableName (string): The name of the table to parse. (Optional, Default:
  The name of the table DynaDoc was initialized with)
 
 We can pull index and hashkey information out of the response.
