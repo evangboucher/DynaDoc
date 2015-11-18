@@ -5,7 +5,7 @@
     "main": "dynadoc.js",
     "scripts": {
         "start": "node --harmony test/dynamotest.js",
-        "test": "mocha --harmony test/dynatest.js",
+        "test": "mocha --harmony --recursive test/",
         "test-travis": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --harmony --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js --repo-token $COVERALLS_REPO_TOKEN && rm -rf ./coverage"
     },
     "keywords": [
@@ -36,6 +36,7 @@
     },
     "dependencies": {
         "aws-sdk": "^2.2.12",
+        "joi": "^7.0.0",
         "q": "^1.4.1"
     },
     "devDependencies": {

@@ -26,6 +26,7 @@ Set of test data for mocha tests to use.
 
 //A set of test data for mocha to use.
 
+var Joi = require('joi');
 var testData = {};
 
 testData.TABLE_NAME1 = "DynamoTestDelete";
@@ -79,6 +80,18 @@ testData.t1Data = [{
     }]
 }];
 
+testData.t1Schema = Joi.object().keys({
+    PrimaryHashKey: Joi.string(),
+    "PrimaryRangeKey": Joi.number().integer(),
+    "GlobalSecondaryRange": Joi.string(),
+    "GlobalSecondaryHash": Joi.string(),
+    LocalSecondaryIndex: Joi.string(),
+    "timestamp": Joi.array().items({
+        "time": Joi.date(),
+        "value": Joi.number().integer()
+    })
+});
+
 testData.t2Data = [{
     "CustomerID": "Test2",
     "timestamp": [{
@@ -104,6 +117,15 @@ testData.t2Data = [{
         "value": -100
     }]
 }];
+
+testData.t2Schema = Joi.object().keys({
+    "CustomerID": Joi.string(),
+    "timestamp": Joi.array().items({
+        "time": Joi.string(),
+        "value": Joi.number().integer()
+    })
+})
+
 
 /*
 Generates the key objects (primary and Range keys) for an object.

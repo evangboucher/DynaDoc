@@ -47,6 +47,7 @@ Not yet released to NPM
 var Q = require('q');
 var path = require('path');
 var LIB_FOLDER = __dirname + "/lib/";
+var DYMODEL_FOLDER = LIB_FOLDER + "/dymodel/";
 
 //Get the DynaDoc utilities.
 var Util = require(path.join(LIB_FOLDER, "util"));
@@ -58,6 +59,8 @@ var DescribeTableHelper = require(path.join(LIB_FOLDER, "describeTable"));
 var SmartBatchWriteHelper = require(path.join(LIB_FOLDER, "smartBatchWrite"));
 
 var SmartBatchGetHelper = require(path.join(LIB_FOLDER, "smartBatchGet"));
+
+var DyModel = require(path.join(DYMODEL_FOLDER, "dymodel"));
 
 /*
 Default settings for the DynaDoc module.
@@ -82,7 +85,7 @@ description of the table.
 
 @returns dynaClient (Object): New Instance of DynaDoc.
 **/
-var DynaDoc = function DynaDoc(AWS, tableName) {
+var DynaDoc = function DynaDoc(AWS, tableName, model, readThroughput, writeThroughput) {
 
     if (!tableName) {
         //The table name does not exist, so nothing will work.
@@ -102,6 +105,13 @@ var DynaDoc = function DynaDoc(AWS, tableName) {
 
     this.settings = DEFAULT_SETTINGS;
     this.settings.TableName = tableName;
+
+    if (model) {
+        //@TODO We should make sure we were given a valid Joi Schema.
+        //The Joi Schema that validates input to this DynaClient.
+        this.dymodel = new DyModel(tableName, model, this.dynamoDB);
+    }
+
 
 }
 
@@ -601,5 +611,7 @@ function smartScanHelper() {
     });
     return d.promise;
 }
+
+
 
 module.exports = DynaDoc;
