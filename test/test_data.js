@@ -83,8 +83,8 @@ testData.t1Data = [{
 }];
 
 testData.t1Schema = Joi.object().keys({
-    "PrimaryHashKey": Joi.string().meta({PrimaryRange:true}),
-    "PrimaryRangeKey": Joi.number().integer().meta({PrimaryRange:true}),
+    "PrimaryHashKey": Joi.string(),
+    "PrimaryRangeKey": Joi.number().integer(),
     "GlobalSecondaryRange": Joi.string(),
     "GlobalSecondaryHash": Joi.string(),
     "LocalSecondaryIndex": Joi.string(),

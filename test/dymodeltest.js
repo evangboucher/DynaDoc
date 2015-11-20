@@ -77,7 +77,7 @@ describe('DyModel Test Suite', function () {
             //@TODO Implement a simple test to see if models work.
             //console.log(JSON.stringify(dynaClient.dymodel.toSimpleObject(), null, 4));
             dynaClient.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey", 1, 1);
-
+            dynaClient.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 1, 1);
             done();
         });
     });
