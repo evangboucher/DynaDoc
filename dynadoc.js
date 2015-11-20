@@ -51,6 +51,10 @@ var DYMODEL_FOLDER = LIB_FOLDER + "/dymodel/";
 
 //Get the DynaDoc utilities.
 var Util = require(path.join(LIB_FOLDER, "util"));
+
+//This object will be joined with the DynaClient object.
+var Constants = require(path.join(LIB_FOLDER, "util"));
+
 //Helper that holds the logic of generating a smart query payload.
 var SmartQueryHelper = require(path.join(LIB_FOLDER, "smartQuery"));
 //Helper that parses the describe table response and saves its data.
@@ -72,6 +76,7 @@ var DEFAULT_SETTINGS = {
     Limit: 10
 
 }
+
 
 
 /**
@@ -109,11 +114,14 @@ var DynaDoc = function DynaDoc(AWS, tableName, model, readThroughput, writeThrou
     if (model) {
         //@TODO We should make sure we were given a valid Joi Schema.
         //The Joi Schema that validates input to this DynaClient.
-        this.dymodel = new DyModel(tableName, model, this.dynamoDB);
+        //this.dymodel = new DyModel(tableName, model, this.dynamoDB, readThroughput, writeThroughput);
+        Util.mergeObject(this, new DyModel(tableName, model, this.dynamoDB, readThroughput, writeThroughput));
     }
+    Util.mergeObject(this, Constants);
 
 
 }
+Util.mergeObject(DynaDoc, Constants);
 
 /**
 Simple error checking to reuse some code.

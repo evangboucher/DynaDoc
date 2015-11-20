@@ -27,7 +27,9 @@ Set of test data for mocha tests to use.
 //A set of test data for mocha to use.
 
 var Joi = require('joi');
+var DynaDoc = require("../dynadoc");
 var testData = {};
+
 
 testData.TABLE_NAME1 = "DynamoTestDelete";
 testData.TABLE_NAME2 = "DynamoTest";
@@ -81,11 +83,11 @@ testData.t1Data = [{
 }];
 
 testData.t1Schema = Joi.object().keys({
-    PrimaryHashKey: Joi.string(),
-    "PrimaryRangeKey": Joi.number().integer(),
+    "PrimaryHashKey": Joi.string().meta({PrimaryRange:true}),
+    "PrimaryRangeKey": Joi.number().integer().meta({PrimaryRange:true}),
     "GlobalSecondaryRange": Joi.string(),
     "GlobalSecondaryHash": Joi.string(),
-    LocalSecondaryIndex: Joi.string(),
+    "LocalSecondaryIndex": Joi.string(),
     "timestamp": Joi.array().items({
         "time": Joi.date(),
         "value": Joi.number().integer()
@@ -124,7 +126,7 @@ testData.t2Schema = Joi.object().keys({
         "time": Joi.string(),
         "value": Joi.number().integer()
     })
-})
+});
 
 
 /*

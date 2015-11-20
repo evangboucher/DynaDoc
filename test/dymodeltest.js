@@ -71,10 +71,14 @@ dynaClient.describeTable();
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
 
-describe.skip('DyModel Test Suite', function () {
+describe('DyModel Test Suite', function () {
     describe('#DyModel Creation', function() {
         it('Create basic DyModel for Table 1', function(done) {
             //@TODO Implement a simple test to see if models work.
+            //console.log(JSON.stringify(dynaClient.dymodel.toSimpleObject(), null, 4));
+            dynaClient.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey", 1, 1);
+
+            done();
         });
     });
 });
