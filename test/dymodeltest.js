@@ -67,7 +67,7 @@ if (!envCheck) {
 }
 
 
-var dynaTable1 = new DynaDoc(AWS, testData.TABLE_NAME1, testData.t1Schema, 2, 2);
+var dynaTable1 = new DynaDoc(AWS, testData.TABLE_NAME1, testData.t1Schema, 3, 3);
 var dynaTable2 = new DynaDoc(AWS, testData.TABLE_NAME2, testData.t2Schema, 2, 2);
 
 //The default timeout for every call.

@@ -1,6 +1,6 @@
 {
     "name": "dynadoc",
-    "version": "0.2.3",
+    "version": "0.3.0",
     "description": "An easier and intelligent way to use DynamoDB.",
     "main": "dynadoc.js",
     "scripts": {
@@ -20,7 +20,8 @@
         "dyna",
         "doc",
         "nosql",
-        "node"
+        "node",
+        "orm"
     ],
     "repository": {
         "type": "git",
@@ -29,7 +30,7 @@
     "author": "Evan Boucher",
     "license": "CPAL-1.0",
     "engines": {
-        "node": ">= 0.12.6"
+        "node": ">= 4.0.0"
     },
     "directories": {
         "lib": "lib"
