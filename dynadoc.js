@@ -595,6 +595,36 @@ DynaDoc.prototype.describeTable = function describeTable(tableName) {
     return d.promise;
 }
 
+//Checks if a the given tableDescription has an active state.
+function checkIfActive(tableDescription) {
+    var status = tableDescription.Table.TableStatus;
+    return Util.checkTableStatusActive(status);
+}
+
+/**
+Checks if a table is currently active or not.
+Returns a promise that will either be true if the table is active
+or false if it is in another state.
+**/
+DynaDoc.prototype.isTableActive = function isTableActive() {
+
+    //Lets get some details about the dynamoDB table.
+    var d = Q.defer();
+    var payload = {};
+    payload.TableName = this.settings.TableName;
+    var that = this;
+    this.dynamoDB.describeTable(payload, function(err, res) {
+        errorCheck(err, d);
+        //Lets parse the response for information.
+        if (checkIfActive(res)) {
+            d.resolve(true);
+        } else {
+            d.resolve(false);
+        }
+    });
+    return d.promise;
+}
+
 /**
 Smart Scan will generate the payload given values from the user.
 SmartSvan will return a last evaluated item which can be used to as a starting point

@@ -75,9 +75,32 @@ describe('DyModel Test Suite', function () {
     describe('#DyModel Creation', function() {
         it('Create basic DyModel for Table 1', function(done) {
             //@TODO Implement a simple test to see if models work.
-            //console.log(JSON.stringify(dynaClient.dymodel.toSimpleObject(), null, 4));
-            dynaClient.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey", 1, 1);
+            dynaClient.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
             dynaClient.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 1, 1);
+            dynaClient.ensureLocalIndex("LocalSecondaryIndex", 1, 1);
+
+            console.log(JSON.stringify(dynaClient.toSimpleObject(), null, 4));
+            console.log(JSON.stringify(dynaClient.getTablePayload(), null, 4));
+            dynaClient.isTableActive().then(function (res) {
+                if (res) {
+                    console.log("The table is currently active!");
+                }else {
+                    console.log("The table is currently NOT Active!");
+                }
+
+            });
+
+            dynaClient.createTable().then(function(res) {
+                //DynamoDB alwasy instantly returns.
+                console.log('The response after creating the table.');
+                console.log(JSON.stringify(res, null, 4));
+            }, function(err) {
+                if (err.code === "ResourceInUseException") {
+                    console.log("The table already exists!");
+
+                    return;
+                }
+            })
             done();
         });
     });
