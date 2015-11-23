@@ -133,7 +133,7 @@ describe("DynaDoc", function() {
     describe("#Smart Query", function() {
 
         it("Smart Query with all params but additionalOptions", function(done) {
-            return dynaClient.smartQuery("GlobalSecondary-index",
+            return dynaClient.smartQuery(testData.t1GlobalIndexName,
                 testData.t1Data[0].GlobalSecondaryHash,
                 testData.t1Data[0].GlobalSecondaryRange,
                 "=",
@@ -161,7 +161,7 @@ describe("DynaDoc", function() {
         });
         it("SmartQuery with All params (and some additional options)", function(done) {
 
-            return dynaClient.smartQuery("GlobalSecondary-index",
+            return dynaClient.smartQuery(testData.t1GlobalIndexName,
                 testData.t1Data[0].GlobalSecondaryHash,
                 testData.t1Data[0].GlobalSecondaryRange,
                 "=",
@@ -181,7 +181,7 @@ describe("DynaDoc", function() {
                     expect(result).to.have.property("ScannedCount", 1);
                     assert.strictEqual(result.Items[0].PrimaryHashKey, testData.t1Data[0].PrimaryHashKey);
                     //Ensure that the tableName is right and the additional parameters were included.
-                    expect(result.ConsumedCapacity).to.have.property("TableName","DynamoTestDelete");
+                    expect(result.ConsumedCapacity).to.have.property("TableName", testData.TABLE_NAME1);
                 } catch (err) {
                     done(err);
                     return;
@@ -194,7 +194,7 @@ describe("DynaDoc", function() {
         });
 
         it("SmartQuery Local Secondary Index.", function(done) {
-            return dynaClient.smartQuery("LocalSecondaryIndex-index",
+            return dynaClient.smartQuery(testData.t1LocalIndexName,
                 testData.t1Data[1].PrimaryHashKey,
                 testData.t1Data[1].LocalSecondaryIndex).then(function(result) {
                 //Check the secondary values.

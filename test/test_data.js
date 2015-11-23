@@ -31,8 +31,8 @@ var DynaDoc = require("../dynadoc");
 var testData = {};
 
 
-testData.TABLE_NAME1 = "DynamoTestDelete";
-testData.TABLE_NAME2 = "DynamoTest";
+testData.TABLE_NAME1 = "DynamoTest1";
+testData.TABLE_NAME2 = "DynamoTest2";
 
 const T1PrimaryHashKeyName = "PrimaryHashKey";
 const T1PrimaryRangeKeyName = "PrimaryRangeKey";
@@ -93,6 +93,9 @@ testData.t1Schema = Joi.object().keys({
         "value": Joi.number().integer()
     })
 });
+
+testData.t1GlobalIndexName = "GlobalSecondary-index";
+testData.t1LocalIndexName = "LocalSecondary-index";
 
 testData.t2Data = [{
     "CustomerID": "Test2",

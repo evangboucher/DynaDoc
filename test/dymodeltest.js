@@ -20,6 +20,9 @@ Copyright (c) Mohu Inc.  All Rights Reserved.
 
 Main test file for DynaDoc's model features.
 Model features are optional (you can use DynaDoc without even touching them)
+The tests in this suite will take a while (almost a minute). This is to ensure
+to give DynamoDB enough time to create and delete the tables made from the
+model. The tables created and removed are then used to test on.
 
 @author: Evan Boucher
 @copyright: Mohu Inc.
@@ -64,44 +67,144 @@ if (!envCheck) {
 }
 
 
-var dynaClient = new DynaDoc(AWS, testData.TABLE_NAME1, testData.t1Schema, 2, 2);
-//Requirement to ensure that dynaclient is setup properly.
-dynaClient.describeTable();
+var dynaTable1 = new DynaDoc(AWS, testData.TABLE_NAME1, testData.t1Schema, 2, 2);
+var dynaTable2 = new DynaDoc(AWS, testData.TABLE_NAME2, testData.t2Schema, 2, 2);
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
 
-describe('DyModel Test Suite', function () {
-    describe('#DyModel Creation', function() {
-        it('Create basic DyModel for Table 1', function(done) {
-            //@TODO Implement a simple test to see if models work.
-            dynaClient.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
-            dynaClient.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 1, 1);
-            dynaClient.ensureLocalIndex("LocalSecondaryIndex", 1, 1);
+describe('DyModel Test Suite', function() {
+    describe('#Delete Main Tables', function() {
+        this.timeout(15000);
+        it('Delete Table 1', function(done) {
+            try {
+                dynaTable1.deleteTable().then(function(res) {
+                    //Success. The table is being deleted Asyncrounously.
+                    setTimeout(function() {
+                        //Wait for the table to be deleted
+                        done();
+                    }, 10000);
+                }, function(err) {
+                    //If we don't find the table, then don't worry.
+                    if (err.code === "ResourceNotFoundException") {
+                        done();
+                        return;
+                    }
+                    done(err);
+                });
+            } catch(err) {
+                if (err.code === "ResourceInUseException" || err.code === "ResourceNotFoundException") {
 
-            console.log(JSON.stringify(dynaClient.toSimpleObject(), null, 4));
-            console.log(JSON.stringify(dynaClient.getTablePayload(), null, 4));
-            dynaClient.isTableActive().then(function (res) {
+                    done();
+                    return;
+                }
+            }
+        });
+
+        it('Delete Table 2', function(done) {
+            try {
+                dynaTable2.deleteTable().then(function(res) {
+                    //Success. THe table is being deleted Asyncrounously.
+                    setTimeout(function() {
+                        //Wait for the table to be deleted.
+                        done();
+                    }, 10000);
+                }, function(err) {
+                    //If we don't find the table, then don't worry.
+                    if (err.code === "ResourceNotFoundException") {
+                        done();
+                        return;
+                    }
+                    done(err);
+                });
+            }catch(err) {
+                if (err.code === "ResourceInUseException" || err.code === "ResourceNotFoundException") {
+                    done();
+                    return;
+                }
+            }
+
+
+        });
+    });
+    describe('#DyModel Creation', function() {
+        this.timeout(30000);
+        it('Create basic DyModel for Table 1', function(done) {
+            //Ensure the important indexes that we want.
+            dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
+            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 1, 1, testData.t1GlobalIndexName);
+            dynaTable1.ensureLocalIndex("LocalSecondaryIndex", testData.t1LocalIndexName);
+
+            dynaTable1.createTable(true).then(function(res) {
+                //DynamoDB alwasy instantly returns.
+                setTimeout(function() {
+                    //Wait for the table to be created.
+                    done();
+                }, 15000);
+
+            }, function(err) {
+                done(err);
+            });
+        });
+
+        it('Create Table 2 from model.', function(done) {
+            dynaTable2.ensurePrimaryIndex("CustomerID");
+
+            try {
+                dynaTable2.createTable(true).then(function(res) {
+                    //DynamoDB alwasy instantly returns.
+                    setTimeout(function() {
+                        //Wait for the table to be created.
+                        done();
+                    }, 15000);
+
+                }, function(err) {
+                    if (err.code === "ResourceInUseException") {
+                        console.log("The table already exists!");
+                        done();
+                        return;
+                    }
+                    done(err);
+                });
+            } catch(err) {
+                if (err.code === "ResourceInUseException") {
+                    console.log("The table already exists!");
+                    done();
+                    return;
+                }
+            }
+
+        });
+
+        it('Check Table 1 active state.', function(done) {
+            dynaTable1.isTableActive().then(function(res) {
                 if (res) {
-                    console.log("The table is currently active!");
-                }else {
-                    console.log("The table is currently NOT Active!");
+                    //Table is active.
+                    done();
+                } else {
+                    //table is not active.
+                    done(res);
                 }
 
             });
 
-            dynaClient.createTable().then(function(res) {
-                //DynamoDB alwasy instantly returns.
-                console.log('The response after creating the table.');
-                console.log(JSON.stringify(res, null, 4));
-            }, function(err) {
-                if (err.code === "ResourceInUseException") {
-                    console.log("The table already exists!");
 
-                    return;
+        });
+
+        it('Check Table 2 active state.', function(done) {
+            dynaTable2.isTableActive().then(function(res) {
+                if (res) {
+                    //table is active.
+                    done();
+                } else {
+                    //table is not active.
+                    done(res);
                 }
-            })
-            done();
+
+            });
+
+
         });
     });
+
 });

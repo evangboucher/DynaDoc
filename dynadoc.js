@@ -68,6 +68,8 @@ var DyModel = require(path.join(DYMODEL_FOLDER, "dymodel"));
 
 /*
 Default settings for the DynaDoc module.
+Never reference a global variable in the constructor unless you
+want it to be shared across all instances (in our case we do not).
 */
 var DEFAULT_SETTINGS = {
     ReturnValues: 'NONE',
@@ -90,7 +92,7 @@ description of the table.
 
 @returns dynaClient (Object): New Instance of DynaDoc.
 **/
-var DynaDoc = function DynaDoc(AWS, tableName, model, readThroughput, writeThroughput) {
+function DynaDoc(AWS, tableName, model, readThroughput, writeThroughput) {
 
     if (!tableName) {
         //The table name does not exist, so nothing will work.
@@ -108,7 +110,13 @@ var DynaDoc = function DynaDoc(AWS, tableName, model, readThroughput, writeThrou
     */
     this.PrimaryIndexName = Util.PRIMARY_INDEX_PLACEHOLDER;
 
-    this.settings = DEFAULT_SETTINGS;
+    this.settings = {
+        ReturnValues: 'NONE',
+        ReturnConsumedCapacity: 'NONE',
+        ReturnItemCollectionMetrics: 'NONE',
+        Limit: 10
+
+    };
     this.settings.TableName = tableName;
 
     if (model) {
@@ -118,7 +126,6 @@ var DynaDoc = function DynaDoc(AWS, tableName, model, readThroughput, writeThrou
         Util.mergeObject(this, new DyModel(tableName, model, this.dynamoDB, readThroughput, writeThroughput));
     }
     Util.mergeObject(this, Constants);
-
 
 }
 Util.mergeObject(DynaDoc, Constants);
@@ -390,7 +397,7 @@ DynaDoc.prototype.smartQuery = function smartQuery(indexName, hashValue, rangeVa
     var d = Q.defer();
     //Lets validate the indexName before we start...
     if (!(Util.getIndexes(this.settings)[indexName])) {
-        throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
+        throw new Error("DynaDoc:smartQuery: indexName (" + indexName + ") does not exist in the Table Description.");
     }
     var payload = generatePayload(this.settings);
     //Lets generate the response for them with these values.
@@ -612,7 +619,6 @@ DynaDoc.prototype.isTableActive = function isTableActive() {
     var d = Q.defer();
     var payload = {};
     payload.TableName = this.settings.TableName;
-    var that = this;
     this.dynamoDB.describeTable(payload, function(err, res) {
         errorCheck(err, d);
         //Lets parse the response for information.
@@ -621,6 +627,59 @@ DynaDoc.prototype.isTableActive = function isTableActive() {
         } else {
             d.resolve(false);
         }
+    });
+    return d.promise;
+}
+
+/**
+Deletes the table that DynaDoc currently points to.
+**/
+DynaDoc.prototype.deleteTable = function deleteTable() {
+    //Lets delete the table.
+    var d = Q.defer();
+    var payload = {};
+    payload.TableName = this.settings.TableName;
+    this.dynamoDB.deleteTable(payload, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
+/**
+REQUIRED
+Given this model, create the table. After this is called, all createIndexes
+calls will be blocked. This function will create the DynamoDB table that
+this model represents.
+
+DynamoDB will create the table Asyncrounously. You must wait for the table
+to go from inactive states to active states (IE. from Creating, to Active).
+DynaDoc does not currently do this. We give you a funciton to check if the
+table is ready. dynaClient.isTableActive();
+
+If the table already exists a "ResourceInUseException" will be thrown.
+You can check this by catching the error and looking at the "code" property.
+**/
+DyModel.prototype.createTable = function createTable(ignoreAlreadyExist) {
+    var d = Q.defer();
+    var that = this;
+    this.dynamoDB.createTable(this.createTablePayload, function(err, res) {
+        if (err) {
+            if (ignoreAlreadyExist && err.code === "ResourceInUseException" && err.message.indexOf("Table already exists:") > -1) {
+                d.resolve(true);
+                return;
+            }
+            d.reject(err);
+            throw err;
+            //throw new Error('DynaDoc failed to create the table.');
+        }
+        this.createLock = true;
+        /*
+        Here we should pass the finished schema into the parser so DynaDoc
+        smart features will be useable.
+        */
+        DescribeTableHelper.parseTableDescriptionResponse(that.settings, that.createTablePayload);
+        d.resolve(res);
     });
     return d.promise;
 }
@@ -650,6 +709,12 @@ function smartScanHelper() {
     return d.promise;
 }
 
+/**
+Returns the DynaClient table name.
+**/
+DynaDoc.prototype.getTableName = function getTableName() {
+    return this.settings.TableName;
+}
 
 
 module.exports = DynaDoc;
