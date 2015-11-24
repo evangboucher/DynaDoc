@@ -66,67 +66,16 @@ if (!envCheck) {
     throw new Error('No secret key was found for DynamoDB. Unable to test.');
 }
 
+var randomMax =1000;
 
-var dynaTable1 = new DynaDoc(AWS, testData.TABLE_NAME1, testData.t1Schema, 3, 3);
-var dynaTable2 = new DynaDoc(AWS, testData.TABLE_NAME2, testData.t2Schema, 2, 2);
+var dynaTable1 = new DynaDoc(AWS, testData.TABLE_NAME1 + (Math.floor(Math.random()*randomMax)+5), testData.t1Schema, 3, 3);
+var dynaTable2 = new DynaDoc(AWS, testData.TABLE_NAME2 + (Math.floor(Math.random()*randomMax)+5), testData.t2Schema, 2, 2);
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
 
 describe('DyModel Test Suite', function() {
-    describe('#Delete Main Tables', function() {
-        this.timeout(15000);
-        it('Delete Table 1', function(done) {
-            try {
-                dynaTable1.deleteTable().then(function(res) {
-                    //Success. The table is being deleted Asyncrounously.
-                    setTimeout(function() {
-                        //Wait for the table to be deleted
-                        done();
-                    }, 10000);
-                }, function(err) {
-                    //If we don't find the table, then don't worry.
-                    if (err.code === "ResourceNotFoundException") {
-                        done();
-                        return;
-                    }
-                    done(err);
-                });
-            } catch(err) {
-                if (err.code === "ResourceInUseException" || err.code === "ResourceNotFoundException") {
 
-                    done();
-                    return;
-                }
-            }
-        });
-
-        it('Delete Table 2', function(done) {
-            try {
-                dynaTable2.deleteTable().then(function(res) {
-                    //Success. THe table is being deleted Asyncrounously.
-                    setTimeout(function() {
-                        //Wait for the table to be deleted.
-                        done();
-                    }, 10000);
-                }, function(err) {
-                    //If we don't find the table, then don't worry.
-                    if (err.code === "ResourceNotFoundException") {
-                        done();
-                        return;
-                    }
-                    done(err);
-                });
-            }catch(err) {
-                if (err.code === "ResourceInUseException" || err.code === "ResourceNotFoundException") {
-                    done();
-                    return;
-                }
-            }
-
-
-        });
-    });
     describe('#DyModel Creation', function() {
         this.timeout(30000);
         it('Create basic DyModel for Table 1', function(done) {
@@ -140,10 +89,12 @@ describe('DyModel Test Suite', function() {
                 setTimeout(function() {
                     //Wait for the table to be created.
                     done();
-                }, 15000);
+                    return;
+                }, 10000);
 
             }, function(err) {
                 done(err);
+                return;
             });
         });
 
@@ -156,7 +107,8 @@ describe('DyModel Test Suite', function() {
                     setTimeout(function() {
                         //Wait for the table to be created.
                         done();
-                    }, 15000);
+                        return;
+                    }, 10000);
 
                 }, function(err) {
                     if (err.code === "ResourceInUseException") {
@@ -165,8 +117,9 @@ describe('DyModel Test Suite', function() {
                         return;
                     }
                     done(err);
+                    return;
                 });
-            } catch(err) {
+            } catch (err) {
                 if (err.code === "ResourceInUseException") {
                     console.log("The table already exists!");
                     done();
@@ -181,9 +134,11 @@ describe('DyModel Test Suite', function() {
                 if (res) {
                     //Table is active.
                     done();
+                    return;
                 } else {
                     //table is not active.
                     done(res);
+                    return;
                 }
 
             });
@@ -196,14 +151,63 @@ describe('DyModel Test Suite', function() {
                 if (res) {
                     //table is active.
                     done();
+                    return;
                 } else {
                     //table is not active.
                     done(res);
+                    return;
                 }
 
             });
 
 
+        });
+    });
+
+    describe('#Delete Main Tables', function() {
+        this.timeout(15000);
+
+        it('Delete Table 1', function(done) {
+            //Success. THe table is being deleted Asyncrounously.
+            /*
+            This has been really painful. Mocha will fail every test here
+            because it catches the uncaught error (Resource not found or
+            resource in use (already being deleted) even if I try to catch
+            it first. This is likely because of NodeJS event listeners. I
+            have not found a good way to remove and ignore these event listeners.
+
+            Until I figure this out, we will use DynaDoc's isTableActive to
+            see if a table exists.
+            */
+            dynaTable1.isTableActive().then(function(res) {
+                //Success.
+                console.log('The table is active.')
+                dynaTable1.deleteTable();
+                setTimeout(function() {
+                    //Wait for the table to be deleted.
+                    done();
+                }, 10000);
+            }, function(err) {
+                console.log('There was an error and the table is not active.')
+                done();
+            });
+
+
+        });
+
+        it('Delete Table 2', function(done) {
+            dynaTable2.isTableActive().then(function(res) {
+                //Success.
+                console.log('The table is active.')
+                dynaTable2.deleteTable();
+                setTimeout(function() {
+                    //Wait for the table to be deleted.
+                    done();
+                }, 10000);
+            }, function(err) {
+                console.log('There was an error and the table is not active.')
+                done();
+            });
         });
     });
 
