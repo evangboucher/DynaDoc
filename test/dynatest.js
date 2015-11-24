@@ -104,7 +104,7 @@ describe('DyModel Test Suite', function() {
         });
     })
     describe('#DyModel Creation', function() {
-        this.timeout(30000);
+        this.timeout(15000);
         it('Create basic DyModel for Table 1', function(done) {
             //Ensure the important indexes that we want.
             dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
@@ -117,7 +117,7 @@ describe('DyModel Test Suite', function() {
                     //Wait for the table to be created.
                     done();
                     return;
-                }, 10000);
+                }, 8000);
 
             }, function(err) {
                 done(err);
@@ -135,7 +135,7 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be created.
                         done();
                         return;
-                    }, 10000);
+                    }, 8000);
 
                 }, function(err) {
                     if (err.code === "ResourceInUseException") {
@@ -427,7 +427,7 @@ describe('DyModel Test Suite', function() {
                     assert.fail(err, null, "PutItem Failed to place the item in the database.");
                     done(err);
                 });
-            })
+            });
         });
 
         describe('#GetItem', function() {
