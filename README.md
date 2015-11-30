@@ -8,7 +8,7 @@ DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript a
 
 With DynaDoc you can specify a Joi schema and create a DyModel (DynaDoc's Model object) to represent a table in DynamoDB. DynaDoc will create that table for you and can validate items based on the Joi Schema.
 
-Current Version: 0.3.0
+Current Version: 0.3.1
 
 Quick Notes:
 1. DynaDoc is dependent on the AWS SDK and requires it through npm install. The AWS-SDK is massive, but if you are using DynamoDB then
@@ -75,7 +75,7 @@ Creating a model is easy!
 ```javascript
 //Assuming the DynaDoc object already exists (with a valid AWS object from above examples)
 
-//Using Joi you can create a schema 
+//Using Joi you can create a schema
 testData.t1Schema = Joi.object().keys({
     "PrimaryHashKey": Joi.string(),
     "PrimaryRangeKey": Joi.number().integer(),
@@ -98,14 +98,14 @@ dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 //                      Index Hash Name (from schema), Range Name,         read, write, IndexName (As it will appear in DynamoDB)
 dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, "GlobalIndex-index");
 
-//Create a local index (Always share primary Hash Key): 
+//Create a local index (Always share primary Hash Key):
 dynaTable1.ensureLocalIndex("LocalSecondaryIndex", "LocalIndexRange-index");
 
 /*
 Create the schema in the table. The param is a boolean to ignore and not create a new table if it already exists.
 This is an async call (DynamoDB returns instantly). DynaDoc does not hold a lock or anything. It is currently
 your responsibliity to ensure that the table is active (not in the creating state) before making other
-calls to the DynamoDB table. DynaDoc provides a isTableActive() method that will return the status of 
+calls to the DynamoDB table. DynaDoc provides a isTableActive() method that will return the status of
 the table as a boolean (True if active, false otherwise).
 */
 dynaTable1.createTable(true); //Returns a promise with response from DynamoDB
@@ -215,7 +215,7 @@ The current list of things that need to be done next.
 1. Add smartUpdate
 1. Add smartScan
 2. Add ability to cache failed calls due to provision capcity limit and retry with exponential backoff.
-3. Validate Batch Write calls 
+3. Validate Batch Write calls
 4. Automatically adjust throughput when provision capacity is reached.
 
 
