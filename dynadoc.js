@@ -28,6 +28,8 @@ Factory object that creates new clients with the given AWS object.
 var path = require('path');
 //The location of the lib folder.
 var LIB_FOLDER = path.join(__dirname, "/lib/");
+
+var Util = require(path.join(LIB_FOLDER, 'util'));
 //Get the DynaClient constructor.
 var DynaClient = require(path.join(LIB_FOLDER, 'dynadoc-client'));
 //Require Joi so our users will not have too.
@@ -60,7 +62,7 @@ Creates a new DynaClient for a table.
 DynaFactory.prototype.createClient = function createClient(tableName, model, readThroughput, writeThroughput) {
     if (!DynaFactory.AWS) {
         //The setup method has not been called.
-        throw new Error('DynaDoc: Setup method has not yet been called! Cannot create Client.');
+        throw Util.createError('Setup method has not yet been called! Cannot create Client.');
     }
     return new DynaClient(DynaFactory.AWS, tableName, model, readThroughput, writeThroughput);
 }

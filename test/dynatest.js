@@ -62,7 +62,7 @@ if (process.env.accessKeyId && process.env.secretAccessKey) {
     envCheck = true;
 }
 if (!envCheck) {
-    throw new Error('No secret key was found for DynamoDB. Unable to test.');
+    throw new Error('DynaTest: No secret key was found for DynamoDB. Unable to test.');
 }
 
 //Give the DynaDoc factory the AWS object.
@@ -84,7 +84,7 @@ console.log('Table 2 Name: ' + table2Name);
 
 
 
-var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, 15, 13);
+var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, 10, 10);
 var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, 10, 8);
 
 //The default timeout for every call.
@@ -194,6 +194,27 @@ describe('DyModel Test Suite', function() {
             });
 
 
+        });
+    });
+    describe("#UpdateTable", function() {
+        this.timeout(20000);
+        it('Update table 1 throughput.', function(done) {
+
+            //Lets update the table throughput.
+            dynaTable1.setTableThroughput(15, 13);
+            dynaTable1.updateTable().then(function(res) {
+                try {
+                    expect(res).to.have.property("TableDescription");
+                    expect(res.TableDescription).to.have.property("TableName").to.be.equal(table1Name);
+                    setTimeout(function() {
+                        //Wait for the table to be created.
+                        done();
+                        return;
+                    }, 15000);
+                }catch(err) {
+                    done(err);
+                }
+            });
         });
     });
 
