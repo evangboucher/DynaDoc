@@ -207,10 +207,10 @@ describe('DyModel Test Suite', function() {
                     expect(res).to.have.property("TableDescription");
                     expect(res.TableDescription).to.have.property("TableName").to.be.equal(table1Name);
                     setTimeout(function() {
-                        //Wait for the table to be created.
+                        //Wait for the table to be updated
                         done();
                         return;
-                    }, 15000);
+                    }, 13000);
                 }catch(err) {
                     done(err);
                 }
@@ -224,7 +224,7 @@ describe('DyModel Test Suite', function() {
         //Do a big batchwrite first to put all the data in the two tables.
 
         describe('#BatchWrite', function() {
-            it('BatchWrite a few things.', function(done) {
+            it('BatchWrite a few things. (with 1 second wait)', function(done) {
                 var payload = {
                     RequestItems: {}
                 };
@@ -245,11 +245,18 @@ describe('DyModel Test Suite', function() {
                 return dynaTable1.batchWrite(payload).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                        /*
+                        After long writes, we should wait a bit because the table cannot handle it.
+                        */
+                        setTimeout(function() {
+                            //Wait for a bit.
+                            done();
+                            return;
+                        }, 1000);
                     } catch (err) {
                         done(err);
                         return;
                     }
-                    done();
                 }, function(err) {
                     assert.fail(err, null, "BatchWrite Failed to write data!");
                     done(err);
@@ -533,7 +540,7 @@ describe('DyModel Test Suite', function() {
                     done(err);
                 });
             });
-            it('Batch Delete two items from the previous call.', function(done) {
+            it('Batch Delete two items from the previous call. (With 1 second wait)', function(done) {
                 var tableArray = [table1Name];
                 var deleteItemsObject = {};
                 deleteItemsObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(1)];
@@ -541,11 +548,15 @@ describe('DyModel Test Suite', function() {
                 return dynaTable2.smartBatchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                        setTimeout(function() {
+                            //Wait for a bit.
+                            done();
+                            return;
+                        }, 1000);
                     } catch (err) {
                         done(err);
                         return;
                     }
-                    done();
                 }, function(err) {
                     assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
                     done(err);
@@ -574,7 +585,7 @@ describe('DyModel Test Suite', function() {
                 });
             })
 
-            it('Write to two tables.', function(done) {
+            it('Write to two tables. (With 1 second wait)', function(done) {
                 var tableArray = [table1Name, table2Name];
                 var putItemsObject = {};
                 putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
@@ -583,11 +594,15 @@ describe('DyModel Test Suite', function() {
                 return dynaTable1.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                        setTimeout(function() {
+                            //Wait for a bit.
+                            done();
+                            return;
+                        }, 1000);
                     } catch (err) {
                         done(err);
                         return;
                     }
-                    done();
                 }, function(err) {
                     assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
                     done(err);
