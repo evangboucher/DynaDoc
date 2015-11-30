@@ -41,10 +41,13 @@ Example Config with keys (These keys are not valid. Replace with your valid keys
 AWS.config.update({'region':'<YOUR REGION HERE>'});
 
 //Require the dynadoc module.
-var DynaDoc = require('dynadoc')
+var DynaDoc = require('dynadoc');
+
+//Intializes the DynaDoc singleton factory.
+DynaDoc.setup(AWS);
 
 //If you have multiple tables, you can instantiate multiple DynaDocClients. You must make at least one
-var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
+var dynaClient = DynaDoc.createClient('<DynamoDBTableName>');
 
 //Required in order to use the 'smart' methods of DynaDoc or use DynaDoc Model feature
 dynaClient.describeTable('<TABLE_NAME>'); //Or pass no params to use the <DynamoDBTableName> passed in above
@@ -74,6 +77,11 @@ DynaDoc (as of version 0.3.0) now supports schema models! This means that you ca
 Creating a model is easy!
 ```javascript
 //Assuming the DynaDoc object already exists (with a valid AWS object from above examples)
+var DyncaDoc = require('dynadoc');
+//Get the Joi Validation object.
+var Joi = DynaDoc.getJoi();
+
+var tableName = "MyNewTable";
 
 //Using Joi you can create a schema
 testData.t1Schema = Joi.object().keys({
@@ -89,7 +97,7 @@ testData.t1Schema = Joi.object().keys({
 });
 
 //This creates a new DynaDoc Client that contains a model (15 and 13 are default table read and write throughput)
-var dynaTable1 = new DynaDoc(AWS, table1Name, testData.t1Schema, 15, 13);
+var dynaTable1 = DynaDoc.createClient(tableName, testData.t1Schema, 15, 13);
 
 //For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
 dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
@@ -174,7 +182,11 @@ A special thanks to all of the libraries that DynaDoc is dependent on. Could not
 * <a href="https://www.npmjs.com/package/q" target="_blank">Q Promises</a>
 
 ### How to run tests ###
-DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions.
+DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions. You should setup your aws testing region in us-east-1, or change the test.
+
+You will need to setup two envrionment variables.
+* accessKeyId = "\<Your AWS IAM Access Key\>"
+* secretAccessKey = "\<Your AWS IAM Secret key\>"
 
 You could setup your own DynamoDB Tables to test this project. The objects that you will need to create the table for are not located in the "test/" directory under test_data.js. Tests can be run by running:
 ```
