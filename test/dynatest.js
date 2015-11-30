@@ -39,8 +39,7 @@ var assert = Chai.assert;
 var should = Chai.should();
 var path = require('path');
 var ROOT_DIR = __dirname + "/../";
-//Pull in the test data we will use.
-var testData = require(path.join(__dirname, 'test_data.js'));
+
 
 var DynaDoc = require(path.join(ROOT_DIR, "dynadoc.js"));
 //The AWS object to initialize DynaDoc with.
@@ -65,11 +64,18 @@ if (process.env.accessKeyId && process.env.secretAccessKey) {
 if (!envCheck) {
     throw new Error('No secret key was found for DynamoDB. Unable to test.');
 }
+
+//Give the DynaDoc factory the AWS object.
+DynaDoc.setup(AWS);
+
+//Pull in the test data we will use.
+var testData = require(path.join(__dirname, 'test_data.js'));
+
 //Random window so table names hopefully don't collide.
 var randomMax = 999999;
 //The number will be a suffix of the table name.
-var table1Suffix = (Math.floor(Math.random()*randomMax)+5);
-var table2Suffix = (Math.floor(Math.random()*randomMax)+5);
+var table1Suffix = (Math.floor(Math.random()*randomMax));
+var table2Suffix = (Math.floor(Math.random()*randomMax));
 //The new table names.
 var table1Name = testData.TABLE_NAME1 + table1Suffix;
 var table2Name = testData.TABLE_NAME2 + table2Suffix;
@@ -77,8 +83,9 @@ console.log('Table 1 Name: ' + table1Name);
 console.log('Table 2 Name: ' + table2Name);
 
 
-var dynaTable1 = new DynaDoc(AWS, table1Name, testData.t1Schema, 15, 13);
-var dynaTable2 = new DynaDoc(AWS, table2Name, testData.t2Schema, 10, 8);
+
+var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, 15, 13);
+var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, 10, 8);
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
