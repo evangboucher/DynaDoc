@@ -77,8 +77,8 @@ console.log('Table 1 Name: ' + table1Name);
 console.log('Table 2 Name: ' + table2Name);
 
 
-var dynaTable1 = new DynaDoc(AWS, table1Name, testData.t1Schema, 10, 10);
-var dynaTable2 = new DynaDoc(AWS, table2Name, testData.t2Schema, 8, 8);
+var dynaTable1 = new DynaDoc(AWS, table1Name, testData.t1Schema, 15, 13);
+var dynaTable2 = new DynaDoc(AWS, table2Name, testData.t2Schema, 10, 8);
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
@@ -91,7 +91,7 @@ describe('DyModel Test Suite', function() {
             dynaTable1.deleteTable();
             setTimeout(function() {
                 //Wait for the table to be deleted.
-            }, 5000);
+            }, 10000);
         }, function(err) {
         });
 
@@ -101,17 +101,17 @@ describe('DyModel Test Suite', function() {
             setTimeout(function() {
                 //Wait for the table to be deleted.
                 done();
-            }, 5000);
+            }, 10000);
         }, function(err) {
             done();
         });
     })
     describe('#DyModel Creation', function() {
-        this.timeout(25000);
+        this.timeout(30000);
         it('Create basic DyModel for Table 1', function(done) {
             //Ensure the important indexes that we want.
             dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
-            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 3, testData.t1GlobalIndexName);
+            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, testData.t1GlobalIndexName);
             dynaTable1.ensureLocalIndex("LocalSecondaryIndex", testData.t1LocalIndexName);
             dynaTable1.createTable(true).then(function(res) {
                 //DynamoDB alwasy instantly returns.
@@ -119,7 +119,7 @@ describe('DyModel Test Suite', function() {
                     //Wait for the table to be created.
                     done();
                     return;
-                }, 18000);
+                }, 22000);
 
             }, function(err) {
                 done(err);
@@ -136,7 +136,7 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be created.
                         done();
                         return;
-                    }, 18000);
+                    }, 22000);
 
                 }, function(err) {
                     if (err.code === "ResourceInUseException") {
@@ -491,7 +491,8 @@ describe('DyModel Test Suite', function() {
                 var tableArray = [table1Name];
                 var putItemsObject = {};
                 putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[2], testData.t1Data[1]];
-                return dynaTable2.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
+                //Because we specify a different table in batchWrite we can use any dynaDoc Client.
+                return dynaTable1.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
                     } catch (err) {
