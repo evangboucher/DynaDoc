@@ -45,11 +45,18 @@ Not yet released to NPM
 
 //Q the promised library.
 var Q = require('q');
+var Joi = require('joi');
+
 var path = require('path');
 var LIB_FOLDER = __dirname + "/lib/";
+var DYMODEL_FOLDER = LIB_FOLDER + "/dymodel/";
 
 //Get the DynaDoc utilities.
 var Util = require(path.join(LIB_FOLDER, "util"));
+
+//This object will be joined with the DynaClient object.
+var Constants = require(path.join(LIB_FOLDER, "util"));
+
 //Helper that holds the logic of generating a smart query payload.
 var SmartQueryHelper = require(path.join(LIB_FOLDER, "smartQuery"));
 //Helper that parses the describe table response and saves its data.
@@ -59,8 +66,12 @@ var SmartBatchWriteHelper = require(path.join(LIB_FOLDER, "smartBatchWrite"));
 
 var SmartBatchGetHelper = require(path.join(LIB_FOLDER, "smartBatchGet"));
 
+var DyModel = require(path.join(DYMODEL_FOLDER, "dymodel"));
+
 /*
 Default settings for the DynaDoc module.
+Never reference a global variable in the constructor unless you
+want it to be shared across all instances (in our case we do not).
 */
 var DEFAULT_SETTINGS = {
     ReturnValues: 'NONE',
@@ -69,6 +80,7 @@ var DEFAULT_SETTINGS = {
     Limit: 10
 
 }
+
 
 
 /**
@@ -82,7 +94,7 @@ description of the table.
 
 @returns dynaClient (Object): New Instance of DynaDoc.
 **/
-var DynaDoc = function DynaDoc(AWS, tableName) {
+function DynaDoc(AWS, tableName, model, readThroughput, writeThroughput) {
 
     if (!tableName) {
         //The table name does not exist, so nothing will work.
@@ -100,10 +112,25 @@ var DynaDoc = function DynaDoc(AWS, tableName) {
     */
     this.PrimaryIndexName = Util.PRIMARY_INDEX_PLACEHOLDER;
 
-    this.settings = DEFAULT_SETTINGS;
+    this.settings = {
+        ReturnValues: 'NONE',
+        ReturnConsumedCapacity: 'NONE',
+        ReturnItemCollectionMetrics: 'NONE',
+        Limit: 10
+
+    };
     this.settings.TableName = tableName;
 
+    if (model) {
+        //@TODO We should make sure we were given a valid Joi Schema.
+        //The Joi Schema that validates input to this DynaClient.
+        //this.dymodel = new DyModel(tableName, model, this.dynamoDB, readThroughput, writeThroughput);
+        Util.mergeObject(this, new DyModel(tableName, model, this.dynamoDB, readThroughput, writeThroughput));
+    }
+    Util.mergeObject(this, Constants);
+
 }
+Util.mergeObject(DynaDoc, Constants);
 
 /**
 Simple error checking to reuse some code.
@@ -118,8 +145,8 @@ function errorCheck(err, d) {
 /**
 A function that generates a generic payload from the
 Settings passed in at creation.
-@params settings (Object): The DynaDoc settings object.
-@params existingPayload (Object): A payload object to add default settings to.
+@param settings (Object): The DynaDoc settings object.
+@param existingPayload (Object): A payload object to add default settings to.
 **/
 function generatePayload(settings, existingPayload) {
     if (!settings.TableName) {
@@ -198,6 +225,19 @@ otherwise DyanmoDB will throw an error.
 @param document (Object): The object add to the DynamoDB table (should include all necessary keys).
 **/
 DynaDoc.prototype.putItem = function putItem(item) {
+    /*
+    @TODO DyModel this function. Validation of the item against a schema.
+    @TODo Read asap: The validation works. One issue with Joi is that it
+    does not validate Strings and numbers very well if they can be easily
+    converted. IE. Number field with a value of "78" is a valid number.
+    In a database, this is typically not ok.
+
+    //Validate the item against the database model.
+    if (this.dyModel) {
+        //There is a dymodel for this dynaClient.
+        Joi.assert(item, this.model, "DynaDocValidation: "); //Throws if the validation fails.
+    }
+    */
     var d = Q.defer();
     var payload = generatePayload(this.settings);
     payload.Item = item;
@@ -246,7 +286,7 @@ DynaDoc.prototype.query = function query(params) {
 
 /**
 Promise based batchGet call.
-@params params (Object): The entire payload for batch get.
+@param params (Object): The entire payload for batch get.
 Please see the AWS SDK reference for batchGet:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchGet-property
 
@@ -263,7 +303,7 @@ DynaDoc.prototype.batchGet = function batchGet(params) {
 
 /**
 Promise based batchWrite call.
-@params params (Object): The entire payload for batch write.
+@param params (Object): The entire payload for batch write.
 Please see the AWS SDK reference for batchWrite:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property
 
@@ -280,7 +320,7 @@ DynaDoc.prototype.batchWrite = function batchWrite(params) {
 
 /**
 Promise based scan call.
-@params params (Object): The entire payload for scan.
+@param params (Object): The entire payload for scan.
 Please see the AWS SDK reference for scan:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
 **/
@@ -295,7 +335,7 @@ DynaDoc.prototype.scan = function scan(params) {
 
 /**
 Promise based createSet call.
-@params params (Object): The entire payload for createSet.
+@param params (Object): The entire payload for createSet.
 Please see the AWS SDK reference for createSet:
 http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#createSet-property
 **/
@@ -353,7 +393,7 @@ DynaDoc.prototype.queryOne = function queryOne(indexName, keyConditionExpression
     @param action: An action to take on the Range value. Examples: "<", "=", ">=", etc. (Optional, Default: '=')
     @param limit: An integer limit to the number of objects to return. (Optional, Default = 10)
 
-    @params additionalOptions (Object): Additional Options for query found in the AWS SDK.
+    @param additionalOptions (Object): Additional Options for query found in the AWS SDK. (Optional, Default: null)
 
     @returns promise: Result of the query to DynamoDB.
 
@@ -372,7 +412,7 @@ DynaDoc.prototype.smartQuery = function smartQuery(indexName, hashValue, rangeVa
     var d = Q.defer();
     //Lets validate the indexName before we start...
     if (!(Util.getIndexes(this.settings)[indexName])) {
-        throw new Error("DynaDoc:smartQuery: indexName does not exist in the Table Description.");
+        throw new Error("DynaDoc:smartQuery: indexName (" + indexName + ") does not exist in the Table Description.");
     }
     var payload = generatePayload(this.settings);
     //Lets generate the response for them with these values.
@@ -453,9 +493,9 @@ params and send it to DynamoDB. This function supports both PutRequest and
 DeleteRequest. You must pass seperate objects in as parameters for PutRequests
 and DeleteRequest. Make sure that table names match the object keys.
 
-@params arrayOfTableNames (Array): Array of the table names that will be
+@param arrayOfTableNames (Array): Array of the table names that will be
   affected.
-@params putItemsObject (Object): An object whos Keys are tableNames and values
+@param putItemsObject (Object): An object whos Keys are tableNames and values
    are arrays of objects to put into each table.
 
    putItemsObject = {
@@ -463,12 +503,13 @@ and DeleteRequest. Make sure that table names match the object keys.
    <TableName2>:[{<DocumentToPut},{<DocumentToPut},{<DocumentToPut}, etc...],
 }
 
-@params deleteItemObject (Object): An object whos keys are TableNames and values
+@param deleteItemObject (Object): An object whos keys are TableNames and values
 are arrays of key objects of documents that should be removed from that table.
 The object structure is identical to putItemObject, but the items inside the
 array should only have the Hash and Range key-values if applicable.
 **/
 DynaDoc.prototype.smartBatchWrite = function smartBatchWrite(arrayOfTableNames, putItemsObject, deleteItemObject) {
+
     var d = Q.defer();
     var payload = SmartBatchWriteHelper.smartBatchWrite(arrayOfTableNames, putItemsObject, deleteItemObject);
     this.dynamoDoc.batchWrite(payload, function(err, res) {
@@ -483,9 +524,9 @@ Makes a request to DynamoDB to batchGet several items at one time. Takes an
 array of TableNames and an object that is mapping TableName to an array of
 object keys to retrieve from the database.
 
-@params arrayOfTableNames (Array<String>): An array of table names that items
+@param arrayOfTableNames (Array<String>): An array of table names that items
 will be added to.
-@params batchGetKeyObject (Object): An object that maps table names to arrays of
+@param batchGetKeyObject (Object): An object that maps table names to arrays of
 key objects that will be used to retrieve items from DynamoDB Table. This file
 has the following structure:
 {
@@ -550,7 +591,7 @@ DynaDoc.prototype.updateItem = function updateItem(params) {
 /**
 Function will make a call to get details about a table.
 
-@params tableName (string): The name of the table to parse. (Optional, Default:
+@param tableName (string): The name of the table to parse. (Optional, Default:
  The name of the table DynaDoc was initialized with)
 
 We can pull index and hashkey information out of the response.
@@ -577,6 +618,88 @@ DynaDoc.prototype.describeTable = function describeTable(tableName) {
     return d.promise;
 }
 
+//Checks if a the given tableDescription has an active state.
+function checkIfActive(tableDescription) {
+    var status = tableDescription.Table.TableStatus;
+    return Util.checkTableStatusActive(status);
+}
+
+/**
+Checks if a table is currently active or not.
+Returns a promise that will either be true if the table is active
+or false if it is in another state.
+**/
+DynaDoc.prototype.isTableActive = function isTableActive() {
+
+    //Lets get some details about the dynamoDB table.
+    var d = Q.defer();
+    var payload = {};
+    payload.TableName = this.settings.TableName;
+    this.dynamoDB.describeTable(payload, function(err, res) {
+        errorCheck(err, d);
+        //Lets parse the response for information.
+        if (checkIfActive(res)) {
+            d.resolve(true);
+        } else {
+            d.resolve(false);
+        }
+    });
+    return d.promise;
+}
+
+/**
+Deletes the table that DynaDoc currently points to.
+**/
+DynaDoc.prototype.deleteTable = function deleteTable() {
+    //Lets delete the table.
+    var d = Q.defer();
+    var payload = {};
+    payload.TableName = this.settings.TableName;
+    this.dynamoDB.deleteTable(payload, function(err, res) {
+        errorCheck(err, d);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
+/**
+REQUIRED
+Given this model, create the table. After this is called, all createIndexes
+calls will be blocked. This function will create the DynamoDB table that
+this model represents.
+
+DynamoDB will create the table Asyncrounously. You must wait for the table
+to go from inactive states to active states (IE. from Creating, to Active).
+DynaDoc does not currently do this. We give you a funciton to check if the
+table is ready. dynaClient.isTableActive();
+
+If the table already exists a "ResourceInUseException" will be thrown.
+You can check this by catching the error and looking at the "code" property.
+**/
+DyModel.prototype.createTable = function createTable(ignoreAlreadyExist) {
+    var d = Q.defer();
+    var that = this;
+    this.dynamoDB.createTable(this.createTablePayload, function(err, res) {
+        if (err) {
+            if (ignoreAlreadyExist && err.code === "ResourceInUseException" && err.message.indexOf("Table already exists:") > -1) {
+                d.resolve(true);
+                return;
+            }
+            d.reject(err);
+            throw err;
+            //throw new Error('DynaDoc failed to create the table.');
+        }
+        this.createLock = true;
+        /*
+        Here we should pass the finished schema into the parser so DynaDoc
+        smart features will be useable.
+        */
+        DescribeTableHelper.parseTableDescriptionResponse(that.settings, that.createTablePayload);
+        d.resolve(res);
+    });
+    return d.promise;
+}
+
 /**
 Smart Scan will generate the payload given values from the user.
 SmartSvan will return a last evaluated item which can be used to as a starting point
@@ -590,7 +713,7 @@ DynaDoc.prototype.smartScan = function smartScan() {
     return "Not Yet Implemented!";
 }
 
-function* smartScan() {
+function smartScanHelper() {
     var d = Q.defer();
     var payload = generatePayload(this.settings);
 
@@ -601,5 +724,13 @@ function* smartScan() {
     });
     return d.promise;
 }
+
+/**
+Returns the DynaClient table name.
+**/
+DynaDoc.prototype.getTableName = function getTableName() {
+    return this.settings.TableName;
+}
+
 
 module.exports = DynaDoc;

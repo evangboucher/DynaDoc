@@ -26,10 +26,13 @@ Set of test data for mocha tests to use.
 
 //A set of test data for mocha to use.
 
+var Joi = require('joi');
+var DynaDoc = require("../dynadoc");
 var testData = {};
 
-testData.TABLE_NAME1 = "DynamoTestDelete";
-testData.TABLE_NAME2 = "DynamoTest";
+
+testData.TABLE_NAME1 = "DynamoTest1";
+testData.TABLE_NAME2 = "DynamoTest2";
 
 const T1PrimaryHashKeyName = "PrimaryHashKey";
 const T1PrimaryRangeKeyName = "PrimaryRangeKey";
@@ -79,11 +82,26 @@ testData.t1Data = [{
     }]
 }];
 
+testData.t1Schema = Joi.object().keys({
+    "PrimaryHashKey": Joi.string(),
+    "PrimaryRangeKey": Joi.number().integer(),
+    "GlobalSecondaryRange": Joi.string(),
+    "GlobalSecondaryHash": Joi.string(),
+    "LocalSecondaryIndex": Joi.string(),
+    "timestamp": Joi.array().items({
+        "time": Joi.date(),
+        "value": Joi.number().integer()
+    })
+});
+
+testData.t1GlobalIndexName = "GlobalSecondary-index";
+testData.t1LocalIndexName = "LocalSecondary-index";
+
 testData.t2Data = [{
     "CustomerID": "Test2",
     "timestamp": [{
         "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
+        "value": "76"
     }]
 }, {
     "CustomerID": "Test3",
@@ -104,6 +122,23 @@ testData.t2Data = [{
         "value": -100
     }]
 }];
+testData.t2Data_Fobidden = {
+    "CustomerID": "Test5",
+    "timestamp": [{
+        "time": "2015-08-11T21:31:45.339Z",
+        "value": -100
+    }],
+    "forbidden": 746
+};
+testData.t2Schema = Joi.object().keys({
+    "CustomerID": Joi.string(),
+    "timestamp": Joi.array().items(Joi.object().keys({
+        "time": Joi.string(),
+        "value": Joi.number().integer()
+    })),
+    "forbidden": Joi.any().forbidden()
+});
+
 
 /*
 Generates the key objects (primary and Range keys) for an object.
