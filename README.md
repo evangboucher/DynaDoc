@@ -4,7 +4,9 @@
 
 NOTICE: DynaDoc is not yet ready for production. Every piece of this project is under heavy development. You should not use this library for production purposes until version 1.0.0 is released. Planned release date is: 12/4/2015
 
-DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript. DynaDoc is a promise-based DocumentClient API that is able to parse DynamoDB table's description and generates payloads dynamically. DynaDoc builds directly off of the DynamoDB Document Client (simply promising the original DynamoDB DocumentClient API) with some smart parsing features. Normally the DynamoDB requires a fairly large JSON payload with a lot of repetitive data. DynaDoc tries to make it easier and abstract this payload generation away from the developer.
+DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript and partial ORM. DynaDoc is a promise-based DocumentClient API that is able to parse DynamoDB table's description and generates payloads dynamically. DynaDoc builds directly off of the DynamoDB Document Client (simply promising the original DynamoDB DocumentClient API) with some smart parsing features and model structures. Normally the DynamoDB requires a fairly large JSON payload with a lot of repetitive data. DynaDoc tries to make it easier and abstract this payload generation away from the developer.
+
+With DynaDoc you can specify a Joi schema and create a DyModel (DynaDoc's Model object) to represent a table in DynamoDB. DynaDoc will create that table for you and can validate items based on the Joi Schema.
 
 Current Version: 0.3.0
 
@@ -16,7 +18,7 @@ it will make sense to have the SDK. Hopefully, we can come up with a way to mini
 
 Install the module.
 ```
-npm install dynadoc
+npm install dynadoc --save
 ```
 
 To instantiate it:
@@ -44,7 +46,7 @@ var DynaDoc = require('dynadoc')
 //If you have multiple tables, you can instantiate multiple DynaDocClients. You must make at least one
 var dynaClient = new DynaDoc(AWS, '<DynamoDBTableName>');
 
-//Required in order to use the 'smart' methods of DynaDoc.
+//Required in order to use the 'smart' methods of DynaDoc or use DynaDoc Model feature
 dynaClient.describeTable('<TABLE_NAME>'); //Or pass no params to use the <DynamoDBTableName> passed in above
 ```
 
@@ -63,6 +65,50 @@ var response = yield dynaClient.getItem('<PrimaryHashKey>');
 var response = yield dynaClient.smartQuery('<IndexName>', '<HashValue>', '<RangeValue>', '<Action>', '<limit>', {'<AdditionalOptions>':'<Value>'});
 
 
+```
+
+### Using DynaDoc's DyModel Feature ###
+
+DynaDoc (as of version 0.3.0) now supports schema models! This means that you can specify a specific DynaClient object with a model to represent a table. DynaDoc will then create the DynamoDB table based on that model and will then be able to validate items against that model. Creating models is helpful as it allows for dynamic adjustments for a DynamoDB table. Adjust the throughput, create new indexes, update index throughput, delete indexes, and/or remove old tables to build new ones! DynaDoc will help you do it!
+
+Creating a model is easy!
+```javascript
+//Assuming the DynaDoc object already exists (with a valid AWS object from above examples)
+
+//Using Joi you can create a schema 
+testData.t1Schema = Joi.object().keys({
+    "PrimaryHashKey": Joi.string(),
+    "PrimaryRangeKey": Joi.number().integer(),
+    "GlobalSecondaryRange": Joi.string(),
+    "GlobalSecondaryHash": Joi.string(),
+    "LocalSecondaryIndex": Joi.string(),
+    "timestamp": Joi.array().items({
+        "time": Joi.date(),
+        "value": Joi.number().integer()
+    })
+});
+
+//This creates a new DynaDoc Client that contains a model (15 and 13 are default table read and write throughput)
+var dynaTable1 = new DynaDoc(AWS, table1Name, testData.t1Schema, 15, 13);
+
+//For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
+dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
+
+//This tells DynaDoc that the item GlobalSecondaryHash is a new Global Index.
+//                      Index Hash Name (from schema), Range Name,         read, write, IndexName (As it will appear in DynamoDB)
+dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, "GlobalIndex-index");
+
+//Create a local index (Always share primary Hash Key): 
+dynaTable1.ensureLocalIndex("LocalSecondaryIndex", "LocalIndexRange-index");
+
+/*
+Create the schema in the table. The param is a boolean to ignore and not create a new table if it already exists.
+This is an async call (DynamoDB returns instantly). DynaDoc does not hold a lock or anything. It is currently
+your responsibliity to ensure that the table is active (not in the creating state) before making other
+calls to the DynamoDB table. DynaDoc provides a isTableActive() method that will return the status of 
+the table as a boolean (True if active, false otherwise).
+*/
+dynaTable1.createTable(true); //Returns a promise with response from DynamoDB
 ```
 
 ### What DynaDoc does for you! ###
@@ -121,7 +167,11 @@ setSettings will allow you to add default values to every payload. Currently the
 * ReturnItemCollectionMetrics: <String> 'SIZE | NONE'
 
 ### Dependencies ###
-* NPM: <a href="https://www.npmjs.com/package/aws-sdk" target="_blank">aws-sdk</a>
+A special thanks to all of the libraries that DynaDoc is dependent on. Could not do it without them! :)
+
+* <a href="https://www.npmjs.com/package/aws-sdk" target="_blank">aws-sdk</a>
+* <a href="https://github.com/hapijs/joi" target="_blank">Joi</a>
+* <a href="https://www.npmjs.com/package/q" target="_blank">Q Promises</a>
 
 ### How to run tests ###
 DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions.
@@ -135,7 +185,7 @@ npm test
 
 ### Contribution guidelines ###
 
-* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or break other tests.
+* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or breaks other tests.
 * All pull requests are reviewed and will be merged once approved by the author or repository authorities.
 * DynaDoc requires detailed comments and descriptions of functions and lines. You should throughly test functionality and produce the leanest code possible. I am happy to work with you in order to help improve and implement new features and code.
 
@@ -146,6 +196,7 @@ Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or
 * Evan Boucher
 * Please open issues if you discover a problem or to request a new feature.
 * Contributions are welcomed. Please create a pull request.
+* Please use Gitter (badge is at the top of this readme) for communications about DynaDoc
 
 DynaDoc is Open Source and authored by Evan Boucher.
 
@@ -154,22 +205,24 @@ Copyrighted and Sponsored by Mohu Inc. <a href="http://www.gomohu.com" target="_
 
 ### Why DynaDoc? ###
 
-DynaDoc was made by a developer who loves AWS and needed the best way to access DynamoDB quickly and effectively. DynaDoc hopes to become that tool!
+DynaDoc was made by a developer who loves AWS and DynamoDB. I needed the best way to access DynamoDB quickly and effectively. DynaDoc hopes to become that tool!
 
 
 ## ToDo List ##
 The current list of things that need to be done next.
 
 1. Enable temporary params into all smart functions (IE. Ability to change query result item order) Currently only SmartQuery has this feature.
-1. Add smartUpdate (Big feature)
+1. Add smartUpdate
 1. Add smartScan
 2. Add ability to cache failed calls due to provision capcity limit and retry with exponential backoff.
+3. Validate Batch Write calls 
+4. Automatically adjust throughput when provision capacity is reached.
 
 
 ### License ###
 Released under the terms of the CPAL-1.0 License.
 
-CPAL-1.0 allows you to make changes, use commercially, and distribute DynaDoc with a few requirements. If you modify any file of DynaDoc, you must released the modified files under the CPAL-1.0 license and release the source. If you want to use DynaDoc, we ask that you give credit to Mohu for the use of DynaDoc in your project. This is best done by including the following three lines on/in your product. If your product has a Graphical User Interface of some sort, we ask that you put these three lines somewhere an end user has access to them.
+CPAL-1.0 allows you to make changes, use commercially, and distribute DynaDoc with a few requirements. If you modify any file of DynaDoc, you must released the modified files under the CPAL-1.0 license and release the source. If you want to use DynaDoc, we ask that you give credit to Mohu for the use of DynaDoc in your project. This is best done by including the following three lines on/in your product's UI. If your product has a Graphical User Interface of some sort, we ask that you put these three lines somewhere an end user has access to them.
 
 ```
 DynaDoc powered by Mohu
@@ -178,7 +231,7 @@ http://www.gomohu.com
 ```
 
 When possible please make the URL a hyper link.
-It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution.
+It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution. NPM will have the NOTICE.txt and LICENSE file already provided.
 
 This site gives a good overview of the license (this is not legal advice!):
 <a href="https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary" target="_blank">CPAL-1.0</a>
