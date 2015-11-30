@@ -66,16 +66,19 @@ if (!envCheck) {
     throw new Error('No secret key was found for DynamoDB. Unable to test.');
 }
 //Random window so table names hopefully don't collide.
-var randomMax = 10000;
+var randomMax = 999999;
 //The number will be a suffix of the table name.
 var table1Suffix = (Math.floor(Math.random()*randomMax)+5);
 var table2Suffix = (Math.floor(Math.random()*randomMax)+5);
 //The new table names.
 var table1Name = testData.TABLE_NAME1 + table1Suffix;
 var table2Name = testData.TABLE_NAME2 + table2Suffix;
+console.log('Table 1 Name: ' + table1Name);
+console.log('Table 2 Name: ' + table2Name);
 
-var dynaTable1 = new DynaDoc(AWS, table1Name, testData.t1Schema, 3, 3);
-var dynaTable2 = new DynaDoc(AWS, table2Name, testData.t2Schema, 2, 2);
+
+var dynaTable1 = new DynaDoc(AWS, table1Name, testData.t1Schema, 10, 10);
+var dynaTable2 = new DynaDoc(AWS, table2Name, testData.t2Schema, 8, 8);
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
@@ -104,20 +107,19 @@ describe('DyModel Test Suite', function() {
         });
     })
     describe('#DyModel Creation', function() {
-        this.timeout(15000);
+        this.timeout(25000);
         it('Create basic DyModel for Table 1', function(done) {
             //Ensure the important indexes that we want.
             dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
-            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 1, 1, testData.t1GlobalIndexName);
+            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 3, testData.t1GlobalIndexName);
             dynaTable1.ensureLocalIndex("LocalSecondaryIndex", testData.t1LocalIndexName);
-
             dynaTable1.createTable(true).then(function(res) {
                 //DynamoDB alwasy instantly returns.
                 setTimeout(function() {
                     //Wait for the table to be created.
                     done();
                     return;
-                }, 8000);
+                }, 18000);
 
             }, function(err) {
                 done(err);
@@ -127,7 +129,6 @@ describe('DyModel Test Suite', function() {
 
         it('Create Table 2 from model.', function(done) {
             dynaTable2.ensurePrimaryIndex("CustomerID");
-
             try {
                 dynaTable2.createTable(true).then(function(res) {
                     //DynamoDB alwasy instantly returns.
@@ -135,7 +136,7 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be created.
                         done();
                         return;
-                    }, 8000);
+                    }, 18000);
 
                 }, function(err) {
                     if (err.code === "ResourceInUseException") {

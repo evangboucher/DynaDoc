@@ -45,6 +45,8 @@ Not yet released to NPM
 
 //Q the promised library.
 var Q = require('q');
+var Joi = require('joi');
+
 var path = require('path');
 var LIB_FOLDER = __dirname + "/lib/";
 var DYMODEL_FOLDER = LIB_FOLDER + "/dymodel/";
@@ -223,6 +225,19 @@ otherwise DyanmoDB will throw an error.
 @param document (Object): The object add to the DynamoDB table (should include all necessary keys).
 **/
 DynaDoc.prototype.putItem = function putItem(item) {
+    /*
+    @TODO DyModel this function. Validation of the item against a schema.
+    @TODo Read asap: The validation works. One issue with Joi is that it
+    does not validate Strings and numbers very well if they can be easily
+    converted. IE. Number field with a value of "78" is a valid number.
+    In a database, this is typically not ok.
+
+    //Validate the item against the database model.
+    if (this.dyModel) {
+        //There is a dymodel for this dynaClient.
+        Joi.assert(item, this.model, "DynaDocValidation: "); //Throws if the validation fails.
+    }
+    */
     var d = Q.defer();
     var payload = generatePayload(this.settings);
     payload.Item = item;
@@ -494,6 +509,7 @@ The object structure is identical to putItemObject, but the items inside the
 array should only have the Hash and Range key-values if applicable.
 **/
 DynaDoc.prototype.smartBatchWrite = function smartBatchWrite(arrayOfTableNames, putItemsObject, deleteItemObject) {
+
     var d = Q.defer();
     var payload = SmartBatchWriteHelper.smartBatchWrite(arrayOfTableNames, putItemsObject, deleteItemObject);
     this.dynamoDoc.batchWrite(payload, function(err, res) {

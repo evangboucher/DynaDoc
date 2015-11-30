@@ -101,7 +101,7 @@ testData.t2Data = [{
     "CustomerID": "Test2",
     "timestamp": [{
         "time": "2015-08-11T21:31:32.338Z",
-        "value": 76
+        "value": "76"
     }]
 }, {
     "CustomerID": "Test3",
@@ -122,13 +122,21 @@ testData.t2Data = [{
         "value": -100
     }]
 }];
-
+testData.t2Data_Fobidden = {
+    "CustomerID": "Test5",
+    "timestamp": [{
+        "time": "2015-08-11T21:31:45.339Z",
+        "value": -100
+    }],
+    "forbidden": 746
+};
 testData.t2Schema = Joi.object().keys({
     "CustomerID": Joi.string(),
-    "timestamp": Joi.array().items({
+    "timestamp": Joi.array().items(Joi.object().keys({
         "time": Joi.string(),
         "value": Joi.number().integer()
-    })
+    })),
+    "forbidden": Joi.any().forbidden()
 });
 
 
