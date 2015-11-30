@@ -216,7 +216,7 @@ describe('DyModel Test Suite', function() {
 
                 return dynaTable1.batchWrite(payload).then(function(result) {
                     try {
-                        expect(result).to.have.property("UnprocessedItems");
+                        expect(result).to.have.property("UnprocessedItems").to.be.empty;
                     } catch (err) {
                         done(err);
                         return;
@@ -490,7 +490,7 @@ describe('DyModel Test Suite', function() {
             it('Write to one table.', function(done) {
                 var tableArray = [table1Name];
                 var putItemsObject = {};
-                putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[2], testData.t1Data[1]];
+                putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
                 //Because we specify a different table in batchWrite we can use any dynaDoc Client.
                 return dynaTable1.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
                     try {
@@ -508,7 +508,7 @@ describe('DyModel Test Suite', function() {
             it('Batch Delete two items from the previous call.', function(done) {
                 var tableArray = [table1Name];
                 var deleteItemsObject = {};
-                deleteItemsObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(2)];
+                deleteItemsObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(1)];
 
                 return dynaTable2.smartBatchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
                     try {
@@ -527,7 +527,7 @@ describe('DyModel Test Suite', function() {
             it('Batch Delete from two tables and write to both.', function(done) {
                 var tableArray = [table1Name, table2Name];
                 var putItemsObject = {};
-                putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[2], testData.t1Data[1]];
+                putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
                 putItemsObject[table2Name] = [testData.t2Data[1]];
                 var deleteItemsObject = {};
                 deleteItemsObject[table2Name] = [testData.generateKeyObjectsTable2(3), testData.generateKeyObjectsTable2(2)];
@@ -549,8 +549,8 @@ describe('DyModel Test Suite', function() {
             it('Write to two tables.', function(done) {
                 var tableArray = [table1Name, table2Name];
                 var putItemsObject = {};
-                putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[2], testData.t1Data[1]];
-                putItemsObject[table2Name] = [testData.t2Data[3], testData.t2Data[2], testData.t2Data[1]];
+                putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
+                putItemsObject[table2Name] = [testData.t2Data[2], testData.t2Data[3]];
 
                 return dynaTable1.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
                     try {
