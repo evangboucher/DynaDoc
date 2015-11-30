@@ -74,8 +74,8 @@ var testData = require(path.join(__dirname, 'test_data.js'));
 //Random window so table names hopefully don't collide.
 var randomMax = 999999;
 //The number will be a suffix of the table name.
-var table1Suffix = (Math.floor(Math.random()*randomMax)+5);
-var table2Suffix = (Math.floor(Math.random()*randomMax)+5);
+var table1Suffix = (Math.floor(Math.random()*randomMax));
+var table2Suffix = (Math.floor(Math.random()*randomMax));
 //The new table names.
 var table1Name = testData.TABLE_NAME1 + table1Suffix;
 var table2Name = testData.TABLE_NAME2 + table2Suffix;
