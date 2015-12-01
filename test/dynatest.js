@@ -87,7 +87,6 @@ console.log('Table 2 Name: ' + table2Name);
 var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, 10, 10);
 var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, 10, 8);
 
-console.log(JSON.stringify(dynaTable1.toSimpleObject(), null, 4));
 
 
 
@@ -120,6 +119,7 @@ describe('DyModel Test Suite', function() {
     describe('#DyModel Creation', function() {
         this.timeout(30000);
         it('Create basic DyModel for Table 1', function(done) {
+
             //Ensure the important indexes that we want.
             dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
             dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 3, 3, testData.t1GlobalIndexName);
@@ -139,8 +139,15 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        /*
+        Creates the table 2 DynamoDB table from the Schema.
+        Fun Fact: A table cannot have a local index if the primary index
+        does not already have a range key.
+        */
         it('Create Table 2 from model.', function(done) {
             dynaTable2.ensurePrimaryIndex("CustomerID");
+            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 1, testData.t2GameIDIndexName);
+
             try {
                 dynaTable2.createTable(true).then(function(res) {
                     //DynamoDB alwasy instantly returns.
@@ -163,6 +170,7 @@ describe('DyModel Test Suite', function() {
                     done();
                     return;
                 }
+                throw err;
             }
 
         });
@@ -201,8 +209,18 @@ describe('DyModel Test Suite', function() {
 
         });
     });
+    /**
+    Updates take a very very long time...so this part of the test is
+    very slow. In theory, we would not have to wait in a production
+    environment as the table could still be used until it is finished, but
+    our test will finish so quickly that it would try to delete the
+    table when it is being updated, which DynamoDB does not like.
+
+    The time it takes seems to be fairly diverse. Sometime taking tens of seconds
+    and others taking only a few.
+    **/
     describe("#UpdateTable", function() {
-        this.timeout(25000);
+        this.timeout(60000);
         it('Update table 1 throughput.', function(done) {
 
             //Lets update the table throughput.
@@ -217,7 +235,7 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be updated
                         done();
                         return;
-                    }, 20000);
+                    }, 50000);
                 }catch(err) {
                     done(err);
                 }
@@ -253,6 +271,29 @@ describe('DyModel Test Suite', function() {
                 done(err);
             });
         });
+
+        /*
+        Delete the global index that we made in table 2.
+        Deletes both a global and local index.
+        */
+        it('Delete Global gameID index from table 2', function(done) {
+            this.timeout(60000);
+            dynaTable2.deleteIndex(testData.t2GameIDIndexName);
+            dynaTable2.updateTable().then(function(res) {
+                expect(res).to.have.property("TableDescription");
+                expect(res.TableDescription).to.have.property("TableName").to.be.equal(table2Name);
+                //The index should be in the DELETING state.
+                expect(res.TableDescription.GlobalSecondaryIndexes[0]).to.have.property("IndexStatus").to.be.equal("DELETING");
+                setTimeout(function() {
+                    //Wait for the table to be updated
+                    done();
+                    return;
+                }, 50000);
+            }, function(err) {
+                done(err);
+            });
+        });
+
     });
 
     //Here we can run the actual tests. on the tables we made.
