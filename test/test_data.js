@@ -104,7 +104,8 @@ testData.t2Data = [{
     "timestamp": [{
         "time": "2015-08-11T21:31:32.338Z",
         "value": "76"
-    }]
+    }],
+    "GameID": 60
 }, {
     "CustomerID": "Test3",
     "timestamp": [{
@@ -132,13 +133,15 @@ testData.t2Data_Fobidden = {
     }],
     "forbidden": 746
 };
+testData.t2GameIDIndexName = "GameID-index";
 testData.t2Schema = Joi.object().keys({
     "CustomerID": Joi.string(),
     "timestamp": Joi.array().items(Joi.object().keys({
         "time": Joi.string(),
         "value": Joi.number().integer()
     })),
-    "forbidden": Joi.any().forbidden()
+    "forbidden": Joi.any().forbidden(),
+    "gameID": Joi.number().integer().min(0)
 });
 
 

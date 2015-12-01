@@ -54,17 +54,17 @@ Creates a new DynaClient for a table.
 
 @param tableName (String): The string name of the table to parse.
 @param model (Object): Joi schema that represents the Table Object. [Optional]
-@param readThroughput (integer): The number of read unites for this table.  [Optional]
-@param writeThroughput (integer): The number of write units for this table. [Optional]
+@param readCapacity (integer): The number of read unites for this table.  [Optional]
+@param writeCapacity (integer): The number of write units for this table. [Optional]
 
 @returns DynaClient (Object): The client for communicating with this table.
 **/
-DynaFactory.prototype.createClient = function createClient(tableName, model, readThroughput, writeThroughput) {
+DynaFactory.prototype.createClient = function createClient(tableName, model, readCapacity, writeCapacity) {
     if (!DynaFactory.AWS) {
         //The setup method has not been called.
         throw Util.createError('Setup method has not yet been called! Cannot create Client.');
     }
-    return new DynaClient(DynaFactory.AWS, tableName, model, readThroughput, writeThroughput);
+    return new DynaClient(DynaFactory.AWS, tableName, model, readCapacity, writeCapacity);
 }
 
 /**

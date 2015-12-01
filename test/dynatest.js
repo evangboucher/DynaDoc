@@ -87,6 +87,10 @@ console.log('Table 2 Name: ' + table2Name);
 var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, 10, 10);
 var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, 10, 8);
 
+console.log(JSON.stringify(dynaTable1.toSimpleObject(), null, 4));
+
+
+
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
 
@@ -118,8 +122,9 @@ describe('DyModel Test Suite', function() {
         it('Create basic DyModel for Table 1', function(done) {
             //Ensure the important indexes that we want.
             dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
-            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, testData.t1GlobalIndexName);
+            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 3, 3, testData.t1GlobalIndexName);
             dynaTable1.ensureLocalIndex("LocalSecondaryIndex", testData.t1LocalIndexName);
+            //make the call to create the table.
             dynaTable1.createTable(true).then(function(res) {
                 //DynamoDB alwasy instantly returns.
                 setTimeout(function() {
@@ -197,11 +202,13 @@ describe('DyModel Test Suite', function() {
         });
     });
     describe("#UpdateTable", function() {
-        this.timeout(20000);
+        this.timeout(25000);
         it('Update table 1 throughput.', function(done) {
 
             //Lets update the table throughput.
             dynaTable1.setTableThroughput(15, 13);
+            //Update the global index read and write capacity.
+            dynaTable1.updateGlobalIndex(testData.t1GlobalIndexName, 5, 4);
             dynaTable1.updateTable().then(function(res) {
                 try {
                     expect(res).to.have.property("TableDescription");
@@ -210,10 +217,40 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be updated
                         done();
                         return;
-                    }, 13000);
+                    }, 20000);
                 }catch(err) {
                     done(err);
                 }
+            });
+        });
+
+        /*
+        Creates a new index for table two. When an index is being created, the
+        table is stil useable, however the index is not. The table cannot be
+        deleted while be updated (though it can be used). This typically takes
+        roughly 2 minutes and 15 seconds to complete with an empty table.
+        I don't think I can wait that long for the test to complete. Maybe
+        we will have to make a new table to test this.
+        */
+        it.skip('Add another globalIndex to Table 2.', function(done) {
+            this.timeout(60000);
+            console.log('The table payload before the Index addition update.');
+            console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
+            console.log('-------Spacer-------');
+            //Lets add the index.
+            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 2, testData.t2GameIDIndexName);
+            console.log('The tablePayload after updating with a new index:');
+            console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
+
+            dynaTable2.updateTable().then(function(res) {
+                console.log(JSON.stringify(res, null, 4));
+                setTimeout(function() {
+                    //Wait for the table to be updated
+                    done();
+                    return;
+                }, 35000);
+            }, function(err) {
+                done(err);
             });
         });
     });
