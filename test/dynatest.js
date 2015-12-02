@@ -83,8 +83,10 @@ console.log('Table 1 Name: ' + table1Name);
 console.log('Table 2 Name: ' + table2Name);
 
 
+var table1ReadCapacity = 10;
+var table1WriteCapacity = 10;
 
-var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, 10, 10);
+var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, table1ReadCapacity, table1WriteCapacity);
 var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, 10, 8);
 
 
@@ -208,6 +210,31 @@ describe('DyModel Test Suite', function() {
 
 
         });
+
+        it('Validate DyModel result for Table 1', function() {
+            //Print the model and validate it.
+            var simpleObject = dynaTable1.toSimpleObject();
+            expect(simpleObject.modelName).to.equal(table1Name);
+            expect(dynaTable1.getTablePayload()).to.have.property('TableName');
+            var throughput = dynaTable1.getThroughput();
+            expect(throughput).to.have.property("ReadCapacityUnits");
+            expect(throughput).to.have.property("WriteCapacityUnits");
+            expect(throughput.ReadCapacityUnits).to.be.equal(table1ReadCapacity);
+            expect(throughput.WriteCapacityUnits).to.be.equal(table1WriteCapacity);
+        });
+
+        it('Validate test data against the Dyna Schema', function(done) {
+            //Use the Joi validate methods to validate items against the Schema
+            dynaTable1.assert(testData.t1Data[0], "Assert: Schema invalid for test Data 0");
+            dynaTable1.attempt(testData.t1Data[0], "Attempt: Schema invalid for test Data 0");
+            dynaTable1.validate(testData.t1Data[0], undefined, function(err, value) {
+                if (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            });
+        });
     });
     /**
     Updates take a very very long time...so this part of the test is
@@ -318,7 +345,16 @@ describe('DyModel Test Suite', function() {
                     "PutRequest": {
                         "Item": testData.t1Data[2]
                     }
-                }]
+                }, {
+                    "PutRequest": {
+                        "Item": testData.t1Data[3]
+                    }
+                }];
+                payload.RequestItems[table2Name] = [{
+                    "PutRequest": {
+                        "Item": testData.t2Data[3]
+                    }
+                }];
 
                 return dynaTable1.batchWrite(payload).then(function(result) {
                     try {
@@ -342,7 +378,46 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        describe('#Regular Query', function() {
+            it('Simple regular Query call on table 2.', function(done) {
+                //Use the primary index.
+                var payload = {
+                    "TableName": dynaTable2.getTableName(),
+                    "KeyConditionExpression": "#HashName = :HashValue",
+                    "ExpressionAttributeNames": {
+                        "#HashName": "CustomerID"
+                    },
+                    "ExpressionAttributeValues": {
+                        ":HashValue": testData.t2Data[3].CustomerID
+                    }
+                };
+                //Query to the database.
+                dynaTable2.query(payload).then(function(res) {
+                    expect(res).to.have.property("Items");
+                    expect(res).to.have.property("Count", 1);
+                    expect(res).to.have.property("ScannedCount", 1);
+                    expect(res.Items[0].CustomerID).to.equal(testData.t2Data[3].CustomerID);
+                    done();
+                }, function(err) {
+                    done(err);
+                });
+            });
+        });
 
+        describe('#Delete Item', function() {
+            it('Delete an item from table 2', function(done) {
+                var payload = {
+                    "CustomerID": testData.t2Data[3].CustomerID
+                }
+                dynaTable2.deleteItem(payload).then(function (res) {
+                    expect(res).to.be.empty;
+                    done();
+                }, function(err) {
+                    done(err);
+                });
+
+            });
+        });
 
         describe("#Smart Query", function() {
 

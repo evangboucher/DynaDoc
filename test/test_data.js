@@ -33,8 +33,8 @@ var Joi = DynaDoc.getJoi();
 var testData = {};
 
 
-testData.TABLE_NAME1 = "DynamoTest1";
-testData.TABLE_NAME2 = "DynamoTest2";
+testData.TABLE_NAME1 = "DynaDocTest1";
+testData.TABLE_NAME2 = "DynaDocTest2";
 
 const T1PrimaryHashKeyName = "PrimaryHashKey";
 const T1PrimaryRangeKeyName = "PrimaryRangeKey";
