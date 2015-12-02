@@ -255,6 +255,7 @@ describe('DyModel Test Suite', function() {
             //Update the global index read and write capacity.
             dynaTable1.updateGlobalIndex(testData.t1GlobalIndexName, 5, 4);
             dynaTable1.updateTable().then(function(res) {
+
                 try {
                     expect(res).to.have.property("TableDescription");
                     expect(res.TableDescription).to.have.property("TableName").to.be.equal(table1Name);
@@ -262,7 +263,7 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be updated
                         done();
                         return;
-                    }, 50000);
+                    }, 55000);
                 }catch(err) {
                     done(err);
                 }
@@ -283,12 +284,17 @@ describe('DyModel Test Suite', function() {
             console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
             console.log('-------Spacer-------');
             //Lets add the index.
-            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 2, testData.t2GameIDIndexName);
+            dynaTable2.ensureGlobalIndex("testIndex", undefined, 1, 2, "TestIndex");
             console.log('The tablePayload after updating with a new index:');
             console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
 
             dynaTable2.updateTable().then(function(res) {
+                console.log('The updateTable response after adding index. =============');
                 console.log(JSON.stringify(res, null, 4));
+                console.log('======== END UPDATE TABLE RESPONSE ========');
+                console.log('THe settings object after parsing:');
+                dynaTable2.printSettings();
+                console.log('END SETTINGS object -------------');
                 setTimeout(function() {
                     //Wait for the table to be updated
                     done();
@@ -306,6 +312,7 @@ describe('DyModel Test Suite', function() {
         it('Delete Global gameID index from table 2', function(done) {
             this.timeout(60000);
             dynaTable2.deleteIndex(testData.t2GameIDIndexName);
+            //Kind of defeating the purpose of promises by waiting, but we need to.
             dynaTable2.updateTable().then(function(res) {
                 expect(res).to.have.property("TableDescription");
                 expect(res.TableDescription).to.have.property("TableName").to.be.equal(table2Name);
@@ -313,12 +320,25 @@ describe('DyModel Test Suite', function() {
                 expect(res.TableDescription.GlobalSecondaryIndexes[0]).to.have.property("IndexStatus").to.be.equal("DELETING");
                 setTimeout(function() {
                     //Wait for the table to be updated
-                    done();
+                    //We need to wait for describeTable to be done (fairly instant)
+                    //Describe the table so the new schema is usable.
+                    dynaTable2.describeTable().then(function(res) {
+                        console.log('The describe table response after updates:');
+                        console.log(JSON.stringify(res, null, 4));
+                        setTimeout(function() {
+                            //Wait for the table to be updated
+                            done();
+                            return;
+                        }, 5000);
+                    }, function(err) {
+                        done(err);
+                    });
                     return;
                 }, 50000);
             }, function(err) {
                 done(err);
             });
+
         });
 
     });
