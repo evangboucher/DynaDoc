@@ -74,8 +74,8 @@ var testData = require(path.join(__dirname, 'test_data.js'));
 //Random window so table names hopefully don't collide.
 var randomMax = 999999;
 //The number will be a suffix of the table name.
-var table1Suffix = (Math.floor(Math.random()*randomMax));
-var table2Suffix = (Math.floor(Math.random()*randomMax));
+var table1Suffix = (Math.floor(Math.random() * randomMax));
+var table2Suffix = (Math.floor(Math.random() * randomMax));
 //The new table names.
 var table1Name = testData.TABLE_NAME1 + table1Suffix;
 var table2Name = testData.TABLE_NAME2 + table2Suffix;
@@ -104,8 +104,7 @@ describe('DyModel Test Suite', function() {
             setTimeout(function() {
                 //Wait for the table to be deleted.
             }, 10000);
-        }, function(err) {
-        });
+        }, function(err) {});
 
         dynaTable2.isTableActive().then(function(res) {
             //Success.
@@ -264,7 +263,7 @@ describe('DyModel Test Suite', function() {
                         done();
                         return;
                     }, 55000);
-                }catch(err) {
+                } catch (err) {
                     done(err);
                 }
             });
@@ -396,6 +395,38 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        describe('#Update DynaDoc Settings', function() {
+            it('Change each setting for table 2', function() {
+                var newSettings = {
+                    "ReturnValues": "ALL_OLD",
+                    "ReturnConsumedCapacity": "TOTAL",
+                    "ReturnItemCollectionMetrics": "SIZE",
+                    "Limit": 20
+                };
+                dynaTable2.setSettings(newSettings);
+                var tableSettingObject = dynaTable2.getSettings();
+                expect(tableSettingObject.ReturnValues).to.be.equal("ALL_OLD");
+                expect(tableSettingObject.ReturnConsumedCapacity).to.be.equal("TOTAL");
+                expect(tableSettingObject.ReturnItemCollectionMetrics).to.be.equal("SIZE");
+                expect(tableSettingObject.Limit).to.be.equal(20);
+            });
+
+            it('Revert settings of Table 2.', function() {
+                var newSettings = {
+                    "ReturnValues": "NONE",
+                    "ReturnConsumedCapacity": "NONE",
+                    "ReturnItemCollectionMetrics": "NONE",
+                    "Limit": 10
+                };
+                dynaTable2.setSettings(newSettings);
+                var tableSettingObject = dynaTable2.getSettings();
+                expect(tableSettingObject.ReturnValues).to.be.equal("NONE");
+                expect(tableSettingObject.ReturnConsumedCapacity).to.be.equal("NONE");
+                expect(tableSettingObject.ReturnItemCollectionMetrics).to.be.equal("NONE");
+                expect(tableSettingObject.Limit).to.be.equal(10);
+            })
+        });
+
         describe('#Regular Query', function() {
             it('Simple regular Query call on table 2.', function(done) {
                 //Use the primary index.
@@ -422,12 +453,29 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        describe('#Query One', function() {
+            it('Simple Query one call.', function(done) {
+                //Pass undefined as the indexName to use the primary index.
+                dynaTable2.queryOne(undefined,
+                    "#HashName = :HashValue",
+                {
+                    ":HashValue": testData.t2Data[3].CustomerID
+                }, {
+                    "#HashName": "CustomerID"
+                }).then(function(res) {
+                    done();
+                }, function(err) {
+                    done(err);
+                });
+            })
+        })
+
         describe('#Delete Item', function() {
             it('Delete an item from table 2', function(done) {
                 var payload = {
                     "CustomerID": testData.t2Data[3].CustomerID
                 }
-                dynaTable2.deleteItem(payload).then(function (res) {
+                dynaTable2.deleteItem(payload).then(function(res) {
                     expect(res).to.be.empty;
                     done();
                 }, function(err) {
@@ -523,7 +571,7 @@ describe('DyModel Test Suite', function() {
             });
 
             it("SmartQuery test Primary Index", function(done) {
-                return dynaTable1.smartQuery(dynaTable1.PrimaryIndexName,
+                return dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[1].PrimaryHashKey,
                     testData.t1Data[1].PrimaryRangeKey).then(function(result) {
                     try {
@@ -546,7 +594,7 @@ describe('DyModel Test Suite', function() {
 
         describe("#SmartBetween", function() {
             it("SmartBetween Valid", function(done) {
-                return dynaTable1.smartBetween(dynaTable1.PrimaryIndexName,
+                return dynaTable1.smartBetween(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[1].PrimaryHashKey,
                     testData.t1Data[1].PrimaryRangeKey,
                     testData.t1Data[2].PrimaryRangeKey, 5).then(function(result) {
