@@ -33,8 +33,8 @@ var Joi = DynaDoc.getJoi();
 var testData = {};
 
 
-testData.TABLE_NAME1 = "DynamoTest1";
-testData.TABLE_NAME2 = "DynamoTest2";
+testData.TABLE_NAME1 = "DynaDocTest1";
+testData.TABLE_NAME2 = "DynaDocTest2";
 
 const T1PrimaryHashKeyName = "PrimaryHashKey";
 const T1PrimaryRangeKeyName = "PrimaryRangeKey";
@@ -59,13 +59,15 @@ testData.t1Data = [{
     "PrimaryRangeKey": 1,
     "GlobalSecondaryRange": "GlobalRange1",
     "GlobalSecondaryHash": "GlobalHash1",
-    "LocalSecondaryIndex": "SecondaryIndex1"
+    "LocalSecondaryIndex": "SecondaryIndex1",
+    "score": 90
 }, {
     "PrimaryHashKey": "PrimaryHashTest2",
     "PrimaryRangeKey": 100,
     "GlobalSecondaryRange": "GlobalRange2",
     "GlobalSecondaryHash": "GlobalHash2",
-    "LocalSecondaryIndex": "SecondaryIndex2"
+    "LocalSecondaryIndex": "SecondaryIndex2",
+    "score": 100
 }, {
     "PrimaryHashKey": "PrimaryHashTest2",
     "PrimaryRangeKey": 101,
@@ -93,18 +95,21 @@ testData.t1Schema = Joi.object().keys({
     "timestamp": Joi.array().items({
         "time": Joi.date(),
         "value": Joi.number().integer()
-    })
+    }),
+    "score": Joi.number().integer().min(0).max(100)
 });
 
 testData.t1GlobalIndexName = "GlobalSecondary-index";
 testData.t1LocalIndexName = "LocalSecondary-index";
+testData.t1ScoreIndexName = "ScoreLocal-index";
 
 testData.t2Data = [{
     "CustomerID": "Test2",
     "timestamp": [{
         "time": "2015-08-11T21:31:32.338Z",
         "value": "76"
-    }]
+    }],
+    "gameID": 60
 }, {
     "CustomerID": "Test3",
     "timestamp": [{
@@ -132,13 +137,16 @@ testData.t2Data_Fobidden = {
     }],
     "forbidden": 746
 };
+testData.t2GameIDIndexName = "GameID-index";
+
 testData.t2Schema = Joi.object().keys({
     "CustomerID": Joi.string(),
     "timestamp": Joi.array().items(Joi.object().keys({
         "time": Joi.string(),
         "value": Joi.number().integer()
     })),
-    "forbidden": Joi.any().forbidden()
+    "forbidden": Joi.any().forbidden(),
+    "gameID": Joi.number().integer().min(0)
 });
 
 

@@ -8,7 +8,7 @@ DynaDoc is the smarter DocumentClient for AWS's DynamoDB for NodeJS/JavaScript a
 
 With DynaDoc you can specify a Joi schema and create a DyModel (DynaDoc's Model object) to represent a table in DynamoDB. DynaDoc will create that table for you and can validate items based on the Joi Schema.
 
-Current Version: 0.4.0
+Current Version: 0.5.0
 
 Quick Notes:
 1. DynaDoc is dependent on the AWS SDK and requires it through npm install. The AWS-SDK is massive, but if you are using DynamoDB then

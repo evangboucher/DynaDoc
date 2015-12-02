@@ -62,7 +62,7 @@ if (process.env.accessKeyId && process.env.secretAccessKey) {
     envCheck = true;
 }
 if (!envCheck) {
-    throw new Error('No secret key was found for DynamoDB. Unable to test.');
+    throw new Error('DynaTest: No secret key was found for DynamoDB. Unable to test.');
 }
 
 //Give the DynaDoc factory the AWS object.
@@ -83,9 +83,14 @@ console.log('Table 1 Name: ' + table1Name);
 console.log('Table 2 Name: ' + table2Name);
 
 
+var table1ReadCapacity = 10;
+var table1WriteCapacity = 10;
 
-var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, 15, 13);
+var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, table1ReadCapacity, table1WriteCapacity);
 var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, 10, 8);
+
+
+
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
@@ -116,10 +121,12 @@ describe('DyModel Test Suite', function() {
     describe('#DyModel Creation', function() {
         this.timeout(30000);
         it('Create basic DyModel for Table 1', function(done) {
+
             //Ensure the important indexes that we want.
             dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
-            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, testData.t1GlobalIndexName);
+            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 3, 3, testData.t1GlobalIndexName);
             dynaTable1.ensureLocalIndex("LocalSecondaryIndex", testData.t1LocalIndexName);
+            //make the call to create the table.
             dynaTable1.createTable(true).then(function(res) {
                 //DynamoDB alwasy instantly returns.
                 setTimeout(function() {
@@ -134,8 +141,15 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        /*
+        Creates the table 2 DynamoDB table from the Schema.
+        Fun Fact: A table cannot have a local index if the primary index
+        does not already have a range key.
+        */
         it('Create Table 2 from model.', function(done) {
             dynaTable2.ensurePrimaryIndex("CustomerID");
+            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 1, testData.t2GameIDIndexName);
+
             try {
                 dynaTable2.createTable(true).then(function(res) {
                     //DynamoDB alwasy instantly returns.
@@ -158,6 +172,7 @@ describe('DyModel Test Suite', function() {
                     done();
                     return;
                 }
+                throw err;
             }
 
         });
@@ -195,6 +210,117 @@ describe('DyModel Test Suite', function() {
 
 
         });
+
+        it('Validate DyModel result for Table 1', function() {
+            //Print the model and validate it.
+            var simpleObject = dynaTable1.toSimpleObject();
+            expect(simpleObject.modelName).to.equal(table1Name);
+            expect(dynaTable1.getTablePayload()).to.have.property('TableName');
+            var throughput = dynaTable1.getThroughput();
+            expect(throughput).to.have.property("ReadCapacityUnits");
+            expect(throughput).to.have.property("WriteCapacityUnits");
+            expect(throughput.ReadCapacityUnits).to.be.equal(table1ReadCapacity);
+            expect(throughput.WriteCapacityUnits).to.be.equal(table1WriteCapacity);
+        });
+
+        it('Validate test data against the Dyna Schema', function(done) {
+            //Use the Joi validate methods to validate items against the Schema
+            dynaTable1.assert(testData.t1Data[0], "Assert: Schema invalid for test Data 0");
+            dynaTable1.attempt(testData.t1Data[0], "Attempt: Schema invalid for test Data 0");
+            dynaTable1.validate(testData.t1Data[0], undefined, function(err, value) {
+                if (err) {
+                    done(err);
+                    return;
+                }
+                done();
+            });
+        });
+    });
+    /**
+    Updates take a very very long time...so this part of the test is
+    very slow. In theory, we would not have to wait in a production
+    environment as the table could still be used until it is finished, but
+    our test will finish so quickly that it would try to delete the
+    table when it is being updated, which DynamoDB does not like.
+
+    The time it takes seems to be fairly diverse. Sometime taking tens of seconds
+    and others taking only a few.
+    **/
+    describe("#UpdateTable", function() {
+        this.timeout(60000);
+        it('Update table 1 throughput.', function(done) {
+
+            //Lets update the table throughput.
+            dynaTable1.setTableThroughput(15, 13);
+            //Update the global index read and write capacity.
+            dynaTable1.updateGlobalIndex(testData.t1GlobalIndexName, 5, 4);
+            dynaTable1.updateTable().then(function(res) {
+                try {
+                    expect(res).to.have.property("TableDescription");
+                    expect(res.TableDescription).to.have.property("TableName").to.be.equal(table1Name);
+                    setTimeout(function() {
+                        //Wait for the table to be updated
+                        done();
+                        return;
+                    }, 50000);
+                }catch(err) {
+                    done(err);
+                }
+            });
+        });
+
+        /*
+        Creates a new index for table two. When an index is being created, the
+        table is stil useable, however the index is not. The table cannot be
+        deleted while be updated (though it can be used). This typically takes
+        roughly 2 minutes and 15 seconds to complete with an empty table.
+        I don't think I can wait that long for the test to complete. Maybe
+        we will have to make a new table to test this.
+        */
+        it.skip('Add another globalIndex to Table 2.', function(done) {
+            this.timeout(60000);
+            console.log('The table payload before the Index addition update.');
+            console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
+            console.log('-------Spacer-------');
+            //Lets add the index.
+            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 2, testData.t2GameIDIndexName);
+            console.log('The tablePayload after updating with a new index:');
+            console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
+
+            dynaTable2.updateTable().then(function(res) {
+                console.log(JSON.stringify(res, null, 4));
+                setTimeout(function() {
+                    //Wait for the table to be updated
+                    done();
+                    return;
+                }, 35000);
+            }, function(err) {
+                done(err);
+            });
+        });
+
+        /*
+        Delete the global index that we made in table 2.
+        Deletes both a global and local index.
+        */
+        it('Delete Global gameID index from table 2', function(done) {
+            this.timeout(60000);
+            dynaTable2.deleteIndex(testData.t2GameIDIndexName);
+            dynaTable2.updateTable().then(function(res) {
+                expect(res).to.have.property("TableDescription");
+                expect(res.TableDescription).to.have.property("TableName").to.be.equal(table2Name);
+                //The index should be in the DELETING state.
+                expect(res.TableDescription.GlobalSecondaryIndexes[0]).to.have.property("IndexStatus").to.be.equal("DELETING");
+                setTimeout(function() {
+                    //Wait for the table to be updated
+                    done();
+                    return;
+                }, 50000);
+            }, function(err) {
+                done(err);
+            });
+        });
+
     });
 
     //Here we can run the actual tests. on the tables we made.
@@ -203,7 +329,7 @@ describe('DyModel Test Suite', function() {
         //Do a big batchwrite first to put all the data in the two tables.
 
         describe('#BatchWrite', function() {
-            it('BatchWrite a few things.', function(done) {
+            it('BatchWrite a few things. (with 1 second wait)', function(done) {
                 var payload = {
                     RequestItems: {}
                 };
@@ -219,16 +345,32 @@ describe('DyModel Test Suite', function() {
                     "PutRequest": {
                         "Item": testData.t1Data[2]
                     }
-                }]
+                }, {
+                    "PutRequest": {
+                        "Item": testData.t1Data[3]
+                    }
+                }];
+                payload.RequestItems[table2Name] = [{
+                    "PutRequest": {
+                        "Item": testData.t2Data[3]
+                    }
+                }];
 
                 return dynaTable1.batchWrite(payload).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                        /*
+                        After long writes, we should wait a bit because the table cannot handle it.
+                        */
+                        setTimeout(function() {
+                            //Wait for a bit.
+                            done();
+                            return;
+                        }, 1000);
                     } catch (err) {
                         done(err);
                         return;
                     }
-                    done();
                 }, function(err) {
                     assert.fail(err, null, "BatchWrite Failed to write data!");
                     done(err);
@@ -236,7 +378,46 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        describe('#Regular Query', function() {
+            it('Simple regular Query call on table 2.', function(done) {
+                //Use the primary index.
+                var payload = {
+                    "TableName": dynaTable2.getTableName(),
+                    "KeyConditionExpression": "#HashName = :HashValue",
+                    "ExpressionAttributeNames": {
+                        "#HashName": "CustomerID"
+                    },
+                    "ExpressionAttributeValues": {
+                        ":HashValue": testData.t2Data[3].CustomerID
+                    }
+                };
+                //Query to the database.
+                dynaTable2.query(payload).then(function(res) {
+                    expect(res).to.have.property("Items");
+                    expect(res).to.have.property("Count", 1);
+                    expect(res).to.have.property("ScannedCount", 1);
+                    expect(res.Items[0].CustomerID).to.equal(testData.t2Data[3].CustomerID);
+                    done();
+                }, function(err) {
+                    done(err);
+                });
+            });
+        });
 
+        describe('#Delete Item', function() {
+            it('Delete an item from table 2', function(done) {
+                var payload = {
+                    "CustomerID": testData.t2Data[3].CustomerID
+                }
+                dynaTable2.deleteItem(payload).then(function (res) {
+                    expect(res).to.be.empty;
+                    done();
+                }, function(err) {
+                    done(err);
+                });
+
+            });
+        });
 
         describe("#Smart Query", function() {
 
@@ -387,7 +568,7 @@ describe('DyModel Test Suite', function() {
                 });
             });
 
-            it("Describe Table should return Table Object.", function(done) {
+            it("Describe Table should return Table Object. (With 1 second wait after)", function(done) {
                 dynaTable2.describeTable(table2Name).then(function(result) {
                     try {
                         expect(result).to.have.property("Table");
@@ -395,7 +576,11 @@ describe('DyModel Test Suite', function() {
                         done(err);
                     }
 
-                    done();
+                    setTimeout(function() {
+                        //Wait for a bit.
+                        done();
+                        return;
+                    }, 1000);
                 }, function(err) {
                     assert.fail(err, null, "DescribeTable Failed to get table Details.");
                     done(err);
@@ -512,7 +697,7 @@ describe('DyModel Test Suite', function() {
                     done(err);
                 });
             });
-            it('Batch Delete two items from the previous call.', function(done) {
+            it('Batch Delete two items from the previous call. (With 1 second wait)', function(done) {
                 var tableArray = [table1Name];
                 var deleteItemsObject = {};
                 deleteItemsObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(1)];
@@ -520,11 +705,15 @@ describe('DyModel Test Suite', function() {
                 return dynaTable2.smartBatchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
+                        setTimeout(function() {
+                            //Wait for a bit.
+                            done();
+                            return;
+                        }, 1000);
                     } catch (err) {
                         done(err);
                         return;
                     }
-                    done();
                 }, function(err) {
                     assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
                     done(err);
@@ -562,6 +751,7 @@ describe('DyModel Test Suite', function() {
                 return dynaTable1.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
+
                     } catch (err) {
                         done(err);
                         return;
