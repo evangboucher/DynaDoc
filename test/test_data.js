@@ -146,7 +146,8 @@ testData.t2Schema = Joi.object().keys({
         "value": Joi.number().integer()
     })),
     "forbidden": Joi.any().forbidden(),
-    "gameID": Joi.number().integer().min(0)
+    "gameID": Joi.number().integer().min(0),
+    "testIndex": Joi.number()
 });
 
 

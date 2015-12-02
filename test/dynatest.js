@@ -74,8 +74,8 @@ var testData = require(path.join(__dirname, 'test_data.js'));
 //Random window so table names hopefully don't collide.
 var randomMax = 999999;
 //The number will be a suffix of the table name.
-var table1Suffix = (Math.floor(Math.random()*randomMax));
-var table2Suffix = (Math.floor(Math.random()*randomMax));
+var table1Suffix = (Math.floor(Math.random() * randomMax));
+var table2Suffix = (Math.floor(Math.random() * randomMax));
 //The new table names.
 var table1Name = testData.TABLE_NAME1 + table1Suffix;
 var table2Name = testData.TABLE_NAME2 + table2Suffix;
@@ -104,8 +104,7 @@ describe('DyModel Test Suite', function() {
             setTimeout(function() {
                 //Wait for the table to be deleted.
             }, 10000);
-        }, function(err) {
-        });
+        }, function(err) {});
 
         dynaTable2.isTableActive().then(function(res) {
             //Success.
@@ -255,6 +254,7 @@ describe('DyModel Test Suite', function() {
             //Update the global index read and write capacity.
             dynaTable1.updateGlobalIndex(testData.t1GlobalIndexName, 5, 4);
             dynaTable1.updateTable().then(function(res) {
+
                 try {
                     expect(res).to.have.property("TableDescription");
                     expect(res.TableDescription).to.have.property("TableName").to.be.equal(table1Name);
@@ -262,8 +262,8 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be updated
                         done();
                         return;
-                    }, 50000);
-                }catch(err) {
+                    }, 55000);
+                } catch (err) {
                     done(err);
                 }
             });
@@ -283,12 +283,17 @@ describe('DyModel Test Suite', function() {
             console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
             console.log('-------Spacer-------');
             //Lets add the index.
-            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 2, testData.t2GameIDIndexName);
+            dynaTable2.ensureGlobalIndex("testIndex", undefined, 1, 2, "TestIndex");
             console.log('The tablePayload after updating with a new index:');
             console.log(JSON.stringify(dynaTable2.getTablePayload(), null, 4));
 
             dynaTable2.updateTable().then(function(res) {
+                console.log('The updateTable response after adding index. =============');
                 console.log(JSON.stringify(res, null, 4));
+                console.log('======== END UPDATE TABLE RESPONSE ========');
+                console.log('THe settings object after parsing:');
+                dynaTable2.printSettings();
+                console.log('END SETTINGS object -------------');
                 setTimeout(function() {
                     //Wait for the table to be updated
                     done();
@@ -306,6 +311,7 @@ describe('DyModel Test Suite', function() {
         it('Delete Global gameID index from table 2', function(done) {
             this.timeout(60000);
             dynaTable2.deleteIndex(testData.t2GameIDIndexName);
+            //Kind of defeating the purpose of promises by waiting, but we need to.
             dynaTable2.updateTable().then(function(res) {
                 expect(res).to.have.property("TableDescription");
                 expect(res.TableDescription).to.have.property("TableName").to.be.equal(table2Name);
@@ -313,12 +319,23 @@ describe('DyModel Test Suite', function() {
                 expect(res.TableDescription.GlobalSecondaryIndexes[0]).to.have.property("IndexStatus").to.be.equal("DELETING");
                 setTimeout(function() {
                     //Wait for the table to be updated
-                    done();
+                    //We need to wait for describeTable to be done (fairly instant)
+                    //Describe the table so the new schema is usable.
+                    dynaTable2.describeTable().then(function(res) {
+                        setTimeout(function() {
+                            //Wait for the table to be updated
+                            done();
+                            return;
+                        }, 5000);
+                    }, function(err) {
+                        done(err);
+                    });
                     return;
                 }, 50000);
             }, function(err) {
                 done(err);
             });
+
         });
 
     });
@@ -378,6 +395,38 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        describe('#Update DynaDoc Settings', function() {
+            it('Change each setting for table 2', function() {
+                var newSettings = {
+                    "ReturnValues": "ALL_OLD",
+                    "ReturnConsumedCapacity": "TOTAL",
+                    "ReturnItemCollectionMetrics": "SIZE",
+                    "Limit": 20
+                };
+                dynaTable2.setSettings(newSettings);
+                var tableSettingObject = dynaTable2.getSettings();
+                expect(tableSettingObject.ReturnValues).to.be.equal("ALL_OLD");
+                expect(tableSettingObject.ReturnConsumedCapacity).to.be.equal("TOTAL");
+                expect(tableSettingObject.ReturnItemCollectionMetrics).to.be.equal("SIZE");
+                expect(tableSettingObject.Limit).to.be.equal(20);
+            });
+
+            it('Revert settings of Table 2.', function() {
+                var newSettings = {
+                    "ReturnValues": "NONE",
+                    "ReturnConsumedCapacity": "NONE",
+                    "ReturnItemCollectionMetrics": "NONE",
+                    "Limit": 10
+                };
+                dynaTable2.setSettings(newSettings);
+                var tableSettingObject = dynaTable2.getSettings();
+                expect(tableSettingObject.ReturnValues).to.be.equal("NONE");
+                expect(tableSettingObject.ReturnConsumedCapacity).to.be.equal("NONE");
+                expect(tableSettingObject.ReturnItemCollectionMetrics).to.be.equal("NONE");
+                expect(tableSettingObject.Limit).to.be.equal(10);
+            })
+        });
+
         describe('#Regular Query', function() {
             it('Simple regular Query call on table 2.', function(done) {
                 //Use the primary index.
@@ -404,12 +453,29 @@ describe('DyModel Test Suite', function() {
             });
         });
 
+        describe('#Query One', function() {
+            it('Simple Query one call.', function(done) {
+                //Pass undefined as the indexName to use the primary index.
+                dynaTable2.queryOne(undefined,
+                    "#HashName = :HashValue",
+                {
+                    ":HashValue": testData.t2Data[3].CustomerID
+                }, {
+                    "#HashName": "CustomerID"
+                }).then(function(res) {
+                    done();
+                }, function(err) {
+                    done(err);
+                });
+            })
+        })
+
         describe('#Delete Item', function() {
             it('Delete an item from table 2', function(done) {
                 var payload = {
                     "CustomerID": testData.t2Data[3].CustomerID
                 }
-                dynaTable2.deleteItem(payload).then(function (res) {
+                dynaTable2.deleteItem(payload).then(function(res) {
                     expect(res).to.be.empty;
                     done();
                 }, function(err) {
@@ -505,7 +571,7 @@ describe('DyModel Test Suite', function() {
             });
 
             it("SmartQuery test Primary Index", function(done) {
-                return dynaTable1.smartQuery(dynaTable1.PrimaryIndexName,
+                return dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[1].PrimaryHashKey,
                     testData.t1Data[1].PrimaryRangeKey).then(function(result) {
                     try {
@@ -528,7 +594,7 @@ describe('DyModel Test Suite', function() {
 
         describe("#SmartBetween", function() {
             it("SmartBetween Valid", function(done) {
-                return dynaTable1.smartBetween(dynaTable1.PrimaryIndexName,
+                return dynaTable1.smartBetween(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[1].PrimaryHashKey,
                     testData.t1Data[1].PrimaryRangeKey,
                     testData.t1Data[2].PrimaryRangeKey, 5).then(function(result) {
