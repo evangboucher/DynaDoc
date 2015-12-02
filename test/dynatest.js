@@ -323,8 +323,6 @@ describe('DyModel Test Suite', function() {
                     //We need to wait for describeTable to be done (fairly instant)
                     //Describe the table so the new schema is usable.
                     dynaTable2.describeTable().then(function(res) {
-                        console.log('The describe table response after updates:');
-                        console.log(JSON.stringify(res, null, 4));
                         setTimeout(function() {
                             //Wait for the table to be updated
                             done();
