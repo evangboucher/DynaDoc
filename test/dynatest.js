@@ -771,6 +771,7 @@ describe('DyModel Test Suite', function() {
                 return dynaTable2.smartBatchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
+
                         setTimeout(function() {
                             //Wait for a bit.
                             done();
@@ -846,6 +847,8 @@ describe('DyModel Test Suite', function() {
                         expect(result.Responses[table2Name]).to.not.be.empty;
                         expect(result.Responses).to.have.property(table1Name);
                         expect(result.Responses[table1Name]).to.not.be.empty;
+                        expect(result.Responses[table2Name]).to.have.length(3);
+                        expect(result.Responses[table1Name]).to.have.length(3);
                     } catch (err) {
                         done(err);
                         return;
