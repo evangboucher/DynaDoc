@@ -8,7 +8,7 @@ DynaDoc is a smarter DocumentClient for AWS's DynamoDB and partial ORM written i
 
 With DynaDoc you can specify a Joi schema and create a new Client to represent a table in DynamoDB. DynaDoc will create that table for you and can validate items based on the Joi Schema. The schema can contain Global and Local secondary Indexes that DynaDoc will be able to use and make calls to the DynamoDB table with ease!
 
-Current Version: 0.5.1
+Current Version: 0.5.2
 
 Quick Notes:
 1. DynaDoc is dependent on the AWS SDK and requires it through npm install. The AWS-SDK is massive, but if you are using DynamoDB then

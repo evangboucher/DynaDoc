@@ -99,9 +99,9 @@ testData.t1Schema = Joi.object().keys({
     "score": Joi.number().integer().min(0).max(100)
 });
 
-testData.t1GlobalIndexName = "GlobalSecondary-index";
-testData.t1LocalIndexName = "LocalSecondary-index";
-testData.t1ScoreIndexName = "ScoreLocal-index";
+testData.t1GlobalIndexName = "GlobalSecondaryTest-index";
+testData.t1LocalIndexName = "LocalSecondaryTest-index";
+testData.t1ScoreIndexName = "ScoreLocalTest-index";
 
 testData.t2Data = [{
     "CustomerID": "Test2",
@@ -137,7 +137,7 @@ testData.t2Data_Fobidden = {
     }],
     "forbidden": 746
 };
-testData.t2GameIDIndexName = "GameID-index";
+testData.t2GameIDIndexName = "GameIDCustom-index";
 
 testData.t2Schema = Joi.object().keys({
     "CustomerID": Joi.string(),
