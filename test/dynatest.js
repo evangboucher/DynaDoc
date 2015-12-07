@@ -246,7 +246,7 @@ describe('DyModel Test Suite', function() {
     and others taking only a few.
     **/
     describe("#UpdateTable", function() {
-        this.timeout(60000);
+        this.timeout(70000);
         it('Update table 1 throughput.', function(done) {
 
             //Lets update the table throughput.
@@ -262,7 +262,7 @@ describe('DyModel Test Suite', function() {
                         //Wait for the table to be updated
                         done();
                         return;
-                    }, 55000);
+                    }, 65000);
                 } catch (err) {
                     done(err);
                 }
@@ -298,7 +298,7 @@ describe('DyModel Test Suite', function() {
                     //Wait for the table to be updated
                     done();
                     return;
-                }, 35000);
+                }, 55000);
             }, function(err) {
                 done(err);
             });
@@ -309,7 +309,7 @@ describe('DyModel Test Suite', function() {
         Deletes both a global and local index.
         */
         it('Delete Global gameID index from table 2', function(done) {
-            this.timeout(60000);
+            this.timeout(70000);
             dynaTable2.deleteIndex(testData.t2GameIDIndexName);
             //Kind of defeating the purpose of promises by waiting, but we need to.
             dynaTable2.updateTable().then(function(res) {
@@ -331,7 +331,7 @@ describe('DyModel Test Suite', function() {
                         done(err);
                     });
                     return;
-                }, 50000);
+                }, 60000);
             }, function(err) {
                 done(err);
             });
