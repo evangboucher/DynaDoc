@@ -518,13 +518,10 @@ describe('DyModel Test Suite', function() {
                     "#HashName": "GlobalSecondaryHash",
                     "#RangeName": "GlobalSecondaryRange"
                 }).then(function(res) {
-                    console.log('Async response for smartQuery() test on global.');
-                    console.log(JSON.stringify(res, null, 4));
                     expect(res).to.have.property("Items");
                     expect(res).to.have.property("Count", 1);
                     expect(res).to.have.property("ScannedCount", 1);
                     expect(res.Items[0].GlobalSecondaryHash).to.equal(testData.t1Data[0].GlobalSecondaryHash);
-                    console.log('Just befor DONE(): Async response for smartQuery() test on global.');
                     done();
                 }, function(err) {
                     done(err);
