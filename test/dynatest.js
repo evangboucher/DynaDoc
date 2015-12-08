@@ -408,7 +408,7 @@ describe('DyModel Test Suite', function() {
                     }
                 }];
 
-                return dynaTable1.batchWrite(payload).then(function(result) {
+                return dynaTable1.batchWrite(payload, {ReturnValues: 'NONE'}).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
                         /*
@@ -534,7 +534,7 @@ describe('DyModel Test Suite', function() {
                 var payload = {
                     "CustomerID": testData.t2Data[3].CustomerID
                 }
-                dynaTable2.deleteItem(payload).then(function(res) {
+                dynaTable2.deleteItem(payload, {ReturnValues: 'NONE'}).then(function(res) {
                     expect(res).to.be.empty;
                     done();
                 }, function(err) {
@@ -717,7 +717,7 @@ describe('DyModel Test Suite', function() {
         describe("#PutItem", function() {
 
             it("Put a simple item", function(done) {
-                return dynaTable2.putItem(testData.t2Data[0]).then(function(result) {
+                return dynaTable2.putItem(testData.t2Data[0], {ReturnValues: 'NONE'}).then(function(result) {
                     try {
                         //Put item should currently return an empty object.
                         expect(result).to.be.empty;
@@ -809,7 +809,7 @@ describe('DyModel Test Suite', function() {
                 var putItemsObject = {};
                 putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
                 //Because we specify a different table in batchWrite we can use any dynaDoc Client.
-                return dynaTable1.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
+                return dynaTable1.smartBatchWrite(tableArray, putItemsObject, {ReturnValues: 'NONE'}).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
                     } catch (err) {
