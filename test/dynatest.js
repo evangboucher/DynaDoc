@@ -123,8 +123,8 @@ describe('DyModel Test Suite', function() {
 
             //Ensure the important indexes that we want.
             dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
-            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 3, 3, testData.t1GlobalIndexName);
-            dynaTable1.ensureLocalIndex("LocalSecondaryIndex", testData.t1LocalIndexName);
+            dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 3, 3, testData.t1GlobalIndexName, {"ProjectionType":"ALL"});
+            dynaTable1.ensureLocalIndex("LocalSecondaryIndex", testData.t1LocalIndexName, {"ProjectionType":"KEYS_ONLY"});
             //Quick call to set the max throughput.
             dynaTable1.setMaxThroughput(60);
 
@@ -150,7 +150,7 @@ describe('DyModel Test Suite', function() {
         */
         it('Create Table 2 from model.', function(done) {
             dynaTable2.ensurePrimaryIndex("CustomerID");
-            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 1, testData.t2GameIDIndexName);
+            dynaTable2.ensureGlobalIndex("gameID", undefined, 1, 1, testData.t2GameIDIndexName, {"ProjectionType":"INCLUDE", "NonKeyAttributes":["timestamp"]});
 
             try {
                 dynaTable2.createTable(true).then(function(res) {
