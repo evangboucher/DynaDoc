@@ -382,6 +382,7 @@ describe('DyModel Test Suite', function() {
 
         describe('#BatchWrite', function() {
             it('BatchWrite a few things. (with 1 second wait)', function(done) {
+                this.timeout(4500);
                 var payload = {
                     RequestItems: {}
                 };
@@ -460,6 +461,64 @@ describe('DyModel Test Suite', function() {
                 expect(tableSettingObject.ReturnItemCollectionMetrics).to.be.equal("NONE");
                 expect(tableSettingObject.Limit).to.be.equal(10);
             })
+        });
+
+        describe('#UpdateItem with SmartUpdate()', function() {
+            it('SmartUpdate table 1', function(done) {
+                console.log('Table 1 Just before smartUpdate()');
+                console.log('Table 1 The dyModel simple object.');
+                console.log(JSON.stringify(dynaTable1.toSimpleObject(), null, 4));
+                var timeStampValue = 11;
+                var newObject = {
+                    "PrimaryHashKey": "PrimaryHashTest4",
+                    "PrimaryRangeKey": 200,
+                    "timestamp": [{
+                        "time": "2015-08-11T21:31:32.338Z",
+                        "value": timeStampValue
+                    }]
+                }
+                //TESTING @TODO REMOVE LATER!
+                dynaTable1.smartUpdate(newObject, {"ReturnValues": "ALL_NEW"}).then(function(res) {
+                    console.log('Table 1 Smart Update dynamoDB response is: ');
+                    console.log(JSON.stringify(res, null, 4));
+                    expect(res.Attributes.timestamp[0].value).to.equal(timeStampValue);
+                    done();
+                }, function(err) {
+                    console.log('ERROR: Smart Update dynamoDB error response is: ');
+                    console.log(JSON.stringify(err, null, 4));
+                    done(err);
+                });
+            });
+
+            it('SmartUpdate table 2', function(done) {
+                console.log('Table 2 Just before smartUpdate()');
+                console.log('Table 2 The dyModel simple object.');
+                console.log(JSON.stringify(dynaTable2.toSimpleObject(), null, 4));
+                var timeStampValue = 55;
+                var newObject = {
+                    "CustomerID": "Test5",
+                    "timestamp": [{
+                        "time": "2015-08-11T21:31:45.339Z",
+                        "value": -100
+                    },
+                    {
+                        "time": "2015-08-11T21:31:45.339Z",
+                        "value": timeStampValue
+                    }]
+                };
+                //TESTING @TODO REMOVE LATER!
+                dynaTable2.smartUpdate(newObject, {"ReturnValues": "ALL_NEW"}).then(function(res) {
+                    console.log('Table 2 Smart Update dynamoDB response is: ');
+                    console.log(JSON.stringify(res, null, 4));
+                    expect(res.Attributes.timestamp).to.have.length(2);
+                    expect(res.Attributes.timestamp[1].value).to.equal(timeStampValue);
+                    done();
+                }, function(err) {
+                    console.log('ERROR: Smart Update dynamoDB error response is: ');
+                    console.log(JSON.stringify(err, null, 4));
+                    done(err);
+                });
+            });
         });
 
         describe('#Regular Query', function() {
