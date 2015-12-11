@@ -145,6 +145,12 @@ testData.t2Schema = Joi.object().keys({
         "time": Joi.string(),
         "value": Joi.number().integer()
     })),
+    "testObject": Joi.object().keys({
+        "firstKey": Joi.object().keys({
+            "innerKey": 22
+        }),
+        "secondKey": "TestInner"
+    }),
     "forbidden": Joi.any().forbidden(),
     "gameID": Joi.number().integer().min(0),
     "testIndex": Joi.number()
