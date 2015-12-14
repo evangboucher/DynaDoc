@@ -500,7 +500,8 @@ describe('DyModel Test Suite', function() {
           })
           .set("newList", {IfNotExist: true})
           .set("updateSet");
-
+          //Lets just make sure that we call this for now at least once (drop it though).
+          builder.getPayload();
         builder.send().then(function(res) {
           expect(res.Attributes.timestamp).to.have.length(2);
           expect(res.Attributes.timestamp[0].value).to.equal(timeStampValue);
