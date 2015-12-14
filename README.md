@@ -2,13 +2,13 @@
 
 [![npm version](https://badge.fury.io/js/dynadoc.svg)](https://badge.fury.io/js/dynadoc)     [![Build Status](https://travis-ci.org/evangboucher/DynaDoc.svg?branch=master)](https://travis-ci.org/evangboucher/DynaDoc)  [![Coverage Status](https://coveralls.io/repos/evangboucher/DynaDoc/badge.svg?branch=master&service=github)](https://coveralls.io/github/evangboucher/DynaDoc?branch=master)    [![Join the chat at https://gitter.im/evangboucher/DynaDoc](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/evangboucher/DynaDoc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)   [![npm downloads](https://img.shields.io/npm/dt/dynadoc.svg)](https://www.npmjs.com/package/dynadoc)
 
-NOTICE: DynaDoc is in Beta. Parts of this project are still under heavy development. It is certainly a good idea to begin developing with DynaDoc as the majority of existing functionality will not be changed so you can get familiar with DynaDoc's features. I am looking for feedback and ideas so please help me make this library better by creating issues and pull requests! :)   The first production instance will be v1.0.0. Planned production release date is: 12/18/2015
-
 DynaDoc is a smarter DocumentClient for AWS's DynamoDB and partial ORM written in Javascript/NodeJS. DynaDoc is a promise-based DocumentClient API that is able to parse DynamoDB table's description and generates payloads dynamically. DynaDoc builds directly off of the DynamoDB Document Client (simply promising the original DynamoDB DocumentClient API) with awesome smart parsing features and model structures. Normally DynamoDB requires a fairly large JSON payload with a lot of repetitive data. DynaDoc makes it easier by  generating DynamoDB tables, indexes, and payload calls automatically!
 
 With DynaDoc you can specify a Joi schema and create a new Client to represent a table in DynamoDB. DynaDoc will create that table for you and can validate items based on the Joi Schema. The schema can contain Global and Local secondary Indexes that DynaDoc will be able to use and make calls to the DynamoDB table with ease!
 
 Current Version: 0.6.0
+
+NOTICE: DynaDoc is in Beta. Parts of this project are still under heavy development. It is certainly a good idea to begin developing with DynaDoc as the majority of existing functionality will not be changed so you can get familiar with DynaDoc's features. I am looking for feedback and ideas so please help me make this library better by creating issues and pull requests! :)   The first production instance will be v1.0.0. Planned production release date is: 1/08/2016
 
 Quick Notes:
 1. DynaDoc is dependent on the AWS SDK and requires it through npm install. The AWS-SDK is massive, but if you are using DynamoDB then
