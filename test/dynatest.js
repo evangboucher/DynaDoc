@@ -469,163 +469,7 @@ describe('DyModel Test Suite', function() {
         expect(tableSettingObject.Limit).to.be.equal(10);
       })
     });
-    /* @TODO REMOVE as this update system is already old.
-    describe('#UpdateItem with SmartUpdate(): AttributeUpdates (Legacy)', function() {
-        it('SmartUpdate table 1', function(done) {
-            console.log('Table 1 Just before smartUpdate()');
-            console.log('Table 1 The dyModel simple object.');
-            console.log(JSON.stringify(dynaTable1.toSimpleObject(), null, 4));
-            var timeStampValue = 11;
-            var newObject = {
-                "PrimaryHashKey": "PrimaryHashTest4",
-                "PrimaryRangeKey": 200,
-                "timestamp": [{
-                    "time": "2015-08-11T21:31:32.338Z",
-                    "value": timeStampValue
-                }]
-            }
-            dynaTable1.smartUpdate(newObject, {"ReturnValues": "ALL_NEW"}).then(function(res) {
-                console.log('Table 1 Smart Update dynamoDB response is: ');
-                console.log(JSON.stringify(res, null, 4));
-                expect(res.Attributes.timestamp[0].value).to.equal(timeStampValue);
-                done();
-            }, function(err) {
-                console.log('ERROR: Smart Update dynamoDB error response is: ');
-                console.log(JSON.stringify(err, null, 4));
-                done(err);
-            });
-        });
-
-        it('SmartUpdate table 2', function(done) {
-            console.log('Table 2 Just before smartUpdate()');
-            console.log('Table 2 The dyModel simple object.');
-            console.log(JSON.stringify(dynaTable2.toSimpleObject(), null, 4));
-            var timeStampValue = 55;
-            var newObject = {
-                "CustomerID": "Test5",
-                "timestamp": [{
-                    "time": "2015-08-11T21:31:45.339Z",
-                    "value": -100
-                },
-                {
-                    "time": "2015-08-11T21:31:45.339Z",
-                    "value": timeStampValue
-                }]
-            };
-            dynaTable2.smartUpdate(newObject, {"ReturnValues": "ALL_NEW"}).then(function(res) {
-                console.log('Table 2 Smart Update dynamoDB response is: ');
-                console.log(JSON.stringify(res, null, 4));
-                expect(res.Attributes.timestamp).to.have.length(2);
-                expect(res.Attributes.timestamp[1].value).to.equal(timeStampValue);
-                done();
-            }, function(err) {
-                console.log('ERROR: Smart Update dynamoDB error response is: ');
-                console.log(JSON.stringify(err, null, 4));
-                done(err);
-            });
-        });
-
-        it ('SmartUpdate add to Array', function(done) {
-            console.log('Table 2(add to Array) Just before smartUpdate()');
-            console.log('Table 2(add to Array) The dyModel simple object.');
-            console.log(JSON.stringify(dynaTable2.toSimpleObject(), null, 4));
-            var timeStampValue = 55;
-            var newObject = {
-                "CustomerID": "Test5",
-                "timestamp": [
-                {
-                    "time": "2015-08-11T21:31:45.339Z",
-                    "value": timeStampValue
-                }]
-            };
-            dynaTable2.smartUpdate(newObject, {"ReturnValues": "ALL_NEW", "AddToArrays": true}).then(function(res) {
-                console.log('Table 2(add to Array) Smart Update dynamoDB response is: ');
-                console.log(JSON.stringify(res, null, 4));
-                expect(res.Attributes.timestamp).to.have.length(3);
-                expect(res.Attributes.timestamp[2].value).to.equal(timeStampValue);
-                done();
-            }, function(err) {
-                console.log('ERROR: Smart Update dynamoDB error response is: ');
-                console.log(JSON.stringify(err, null, 4));
-                done(err);
-            });
-        });
-
-        it('SmartUpdate add Missing Keys', function(done) {
-            console.log('Table 2(add Missing Keys) Just before smartUpdate()');
-            console.log('Table 2(add Missing Keys) The dyModel simple object.');
-            console.log(JSON.stringify(dynaTable2.toSimpleObject(), null, 4));
-            var updateValue = 77;
-            var newObject = {
-                "CustomerID": "Test5",
-                "updateValue": updateValue,
-                "updateSet": dynaTable2.createSet([4, 3, 2, 1])
-            };
-            dynaTable2.smartUpdate(newObject, {"ReturnValues": "ALL_NEW", "AddMissingKeys": true}).then(function(res) {
-                console.log('Table 2(add Missing Keys) Smart Update dynamoDB response is: ');
-                console.log(JSON.stringify(res, null, 4));
-                expect(res.Attributes.updateValue).to.equal(updateValue);
-                expect(res.Attributes.updateSet).to.have.length(4);
-                expect(res.Attributes.updateSet[1]).to.be.equal(3);
-                done();
-            }, function(err) {
-                console.log('ERROR: Smart Update dynamoDB error response is: ');
-                console.log(JSON.stringify(err, null, 4));
-                done(err);
-            });
-        });
-
-        it('SmartUpdate delete Keys', function(done) {
-            console.log('Table 2(delete Keys) Just before smartUpdate()');
-            console.log('Table 2(delete Keys) The dyModel simple object.');
-            console.log(JSON.stringify(dynaTable2.toSimpleObject(), null, 4));
-            var updateValue = 77;
-            var newObject = {
-                "CustomerID": "Test5",
-                "updateValue": updateValue
-            };
-            dynaTable2.smartUpdate(newObject, {"ReturnValues": "ALL_NEW", "AddMissingKeys": true}).then(function(res) {
-                console.log('Table 2(delete Keys) Smart Update dynamoDB response is: ');
-                console.log(JSON.stringify(res, null, 4));
-                done();
-            }, function(err) {
-                console.log('ERROR: Smart Update dynamoDB error response is: ');
-                console.log(JSON.stringify(err, null, 4));
-                done(err);
-            });
-        });
-
-        it('SmartUpdate add to Array and add Missing Keys', function(done) {
-            console.log('Table 2(add to Array and add Missing Keys) Just before smartUpdate()');
-            console.log('Table 2(add to Array and add Missing Keys) The dyModel simple object.');
-            console.log(JSON.stringify(dynaTable2.toSimpleObject(), null, 4));
-            var updateValue = 77;
-            var timeStampValue = 82
-            var newObject = {
-                "CustomerID": "Test5",
-                "updateValue": updateValue,
-                "timestamp": [
-                {
-                    "time": "2015-08-11T21:31:45.339Z",
-                    "value": timeStampValue
-                }]
-            };
-            dynaTable2.smartUpdate(newObject, {"ReturnValues": "ALL_NEW", "AddMissingKeys": true}).then(function(res) {
-                console.log('Table 2(add to Array and add Missing Keys) Smart Update dynamoDB response is: ');
-                console.log(JSON.stringify(res, null, 4));
-                expect(res.Attributes.timestamp).to.have.length(4);
-                expect(res.Attributes.timestamp[3].value).to.equal(timeStampValue);
-                expect(res.Attributes.updateValue).to.equal(updateValue);
-                done();
-            }, function(err) {
-                console.log('ERROR: Smart Update dynamoDB error response is: ');
-                console.log(JSON.stringify(err, null, 4));
-                done(err);
-            });
-        });
-
-    });
-    */
+    //Test the smart update functions.
     describe('#SmartUpdate Builder', function() {
       it('Custom Build smartUpdate', function(done) {
         var updateValue = 1000;
@@ -637,10 +481,11 @@ describe('DyModel Test Suite', function() {
           "CustomerID": "Test5",
           "updateValue": updateValue,
           "timestamp": [{
-            "time": "2015-08-11T21:31:45.339Z",
+            "time": "2015-08-11T21:31:45.449Z",
             "value": timeStampValue
           }],
           "updateSet": dynaTable2.createSet([4, 3, 2, 1]),
+          "newList": [1, 2, 3, 4],
           "newValue": newValue
         };
         //dynaTable2.ensurePrimaryIndex("CustomerID");
@@ -648,23 +493,59 @@ describe('DyModel Test Suite', function() {
         var builder = dynaTable2.buildSmartUpdate(newObject, {
           "ReturnValues": "ALL_NEW"
         });
-        builder.add('updateValue').add("newValue").setList('timestamp').set("updateSet").compilePayload();
-
-        console.log(JSON.stringify(builder.getPayload(), null, 4));
+        builder.add('updateValue')
+          .add("newValue")
+          .set('timestamp', {
+            AppendToFront: true
+          })
+          .set("newList", {IfNotExist: true})
+          .set("updateSet")
+          .compilePayload();
+          console.log('Custom update builder payload:::::> ');
+          console.log(JSON.stringify(builder.getPayload(), null, 4));
 
         builder.send().then(function(res) {
           console.log('SmartUpdate Builder: The response from DynamoDB table:')
           console.log(JSON.stringify(res, null, 4));
           expect(res.Attributes.timestamp).to.have.length(2);
-          expect(res.Attributes.timestamp[1].value).to.equal(timeStampValue);
+          expect(res.Attributes.timestamp[0].value).to.equal(timeStampValue);
           assert(res.Attributes.updateValue === expectedValue, "updateValue is not what was expected!");
           expect(res.Attributes).to.have.property("updateSet");
+          expect(res.Attributes).to.have.property("newList");
           console.log('SmartUpdate Builder. passed!');
           done();
         }, function(err) {
+            console.log('SmartUpdate() Custom Build: ERROR!');
           done(err);
         });
 
+      });
+      it('Remove items from newList.', function(done) {
+          //THe value of newList when using remove does not matter right now.
+        var newObject = {
+          "CustomerID": "Test5",
+          "newList": [1]
+        };
+
+        var builder = dynaTable2.buildSmartUpdate(newObject, {
+          "ReturnValues": "ALL_NEW"
+        });
+        builder.remove("newList", {LowerBounds: 1, UpperBounds: 2})
+        .compilePayload();
+        console.log('The remove updateSet payload:');
+        console.log(JSON.stringify(builder.getPayload(), null, 4));
+        builder.send().then(function(res) {
+            console.log('SmartUpdate(): The update remove createSet items response: ');
+            console.log(JSON.stringify(res, null, 4));
+            expect(res.Attributes).to.have.property("newList");
+            expect(res.Attributes.newList).to.have.length(2);
+            expect(res.Attributes.newList[0]).to.equal(1);
+            expect(res.Attributes.newList[1]).to.equal(4);
+            done();
+        }, function(err) {
+            console.log('SmartUpdate() Remove Items from newList. ERROR');
+            done(err);
+        });
       });
 
       it('Custom Build smartUpdate: Remove Items', function(done) {
@@ -672,7 +553,7 @@ describe('DyModel Test Suite', function() {
         var newValue = 10;
         //This is 3 * 7 + 1000 for some reason. Need to figure out why.
         var expectedValue = 1010;
-        var timeStampValue = 43
+        var timeStampValue = 43;
         var newObject = {
           "CustomerID": "Test5",
           "updateValue": updateValue,
@@ -681,14 +562,15 @@ describe('DyModel Test Suite', function() {
             "value": timeStampValue
           }],
           "updateSet": dynaTable2.createSet([4, 3, 2, 1]),
-          "newValue": newValue
+          "newValue": newValue,
+          "newList": 0
         };
         //Create a new builder for the object.
         var builder = dynaTable2.buildSmartUpdate(newObject, {
           "ReturnValues": "ALL_NEW"
         });
-        builder.add('updateValue').remove("newValue").deleteKey("updateSet").compilePayload();
-
+        builder.add('updateValue').remove("newValue").deleteKey("updateSet").remove('newList').compilePayload();
+        console.log('The remove items builder payload: ');
         console.log(JSON.stringify(builder.getPayload(), null, 4));
 
         builder.send().then(function(res) {
@@ -698,9 +580,11 @@ describe('DyModel Test Suite', function() {
           assert(res.Attributes.updateValue === expectedValue, "updateValue is not what was expected!");
           expect(res.Attributes).to.not.have.property('updateSet');
           expect(res.Attributes).to.not.have.property('newValue');
-          console.log('SmartUpdate Builder. passed!');
+          expect(res.Attributes).to.not.have.property('newList');
+          console.log('SmartUpdate Builder: Remove Items. passed!');
           done();
         }, function(err) {
+            console.log('SmartUpdate(): Custom BUild removeItems ERROR!');
           done(err);
         });
 
