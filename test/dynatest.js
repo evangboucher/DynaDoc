@@ -499,20 +499,14 @@ describe('DyModel Test Suite', function() {
             AppendToFront: true
           })
           .set("newList", {IfNotExist: true})
-          .set("updateSet")
-          .compilePayload();
-          console.log('Custom update builder payload:::::> ');
-          console.log(JSON.stringify(builder.getPayload(), null, 4));
+          .set("updateSet");
 
         builder.send().then(function(res) {
-          console.log('SmartUpdate Builder: The response from DynamoDB table:')
-          console.log(JSON.stringify(res, null, 4));
           expect(res.Attributes.timestamp).to.have.length(2);
           expect(res.Attributes.timestamp[0].value).to.equal(timeStampValue);
           assert(res.Attributes.updateValue === expectedValue, "updateValue is not what was expected!");
           expect(res.Attributes).to.have.property("updateSet");
           expect(res.Attributes).to.have.property("newList");
-          console.log('SmartUpdate Builder. passed!');
           done();
         }, function(err) {
             console.log('SmartUpdate() Custom Build: ERROR!');
@@ -530,13 +524,8 @@ describe('DyModel Test Suite', function() {
         var builder = dynaTable2.buildSmartUpdate(newObject, {
           "ReturnValues": "ALL_NEW"
         });
-        builder.remove("newList", {LowerBounds: 1, UpperBounds: 2})
-        .compilePayload();
-        console.log('The remove updateSet payload:');
-        console.log(JSON.stringify(builder.getPayload(), null, 4));
+        builder.remove("newList", {LowerBounds: 1, UpperBounds: 2});
         builder.send().then(function(res) {
-            console.log('SmartUpdate(): The update remove createSet items response: ');
-            console.log(JSON.stringify(res, null, 4));
             expect(res.Attributes).to.have.property("newList");
             expect(res.Attributes.newList).to.have.length(2);
             expect(res.Attributes.newList[0]).to.equal(1);
@@ -567,21 +556,18 @@ describe('DyModel Test Suite', function() {
         };
         //Create a new builder for the object.
         var builder = dynaTable2.buildSmartUpdate(newObject, {
-          "ReturnValues": "ALL_NEW"
+          "ReturnValues": "ALL_NEW",
+          "ReturnConsumedCapacity": "TOTAL",
+          "ReturnItemCollectionMetrics": "SIZE"
         });
-        builder.add('updateValue').remove("newValue").deleteKey("updateSet").remove('newList').compilePayload();
-        console.log('The remove items builder payload: ');
-        console.log(JSON.stringify(builder.getPayload(), null, 4));
+        builder.add('updateValue').remove("newValue").deleteKey("updateSet").remove('newList');
 
         builder.send().then(function(res) {
-          console.log('SmartUpdate Builder: The response from DynamoDB table:')
-          console.log(JSON.stringify(res, null, 4));
           expect(res.Attributes.timestamp).to.have.length(2);
           assert(res.Attributes.updateValue === expectedValue, "updateValue is not what was expected!");
           expect(res.Attributes).to.not.have.property('updateSet');
           expect(res.Attributes).to.not.have.property('newValue');
           expect(res.Attributes).to.not.have.property('newList');
-          console.log('SmartUpdate Builder: Remove Items. passed!');
           done();
         }, function(err) {
             console.log('SmartUpdate(): Custom BUild removeItems ERROR!');
