@@ -1,12 +1,14 @@
 {
     "name": "dynadoc",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "description": "An easier and intelligent way to use DynamoDB.",
     "main": "dynadoc.js",
     "scripts": {
         "start": "node --harmony test/dynamotest.js",
-        "test": "mocha --harmony --recursive test/",
-        "test-travis": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --harmony --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js --repo-token $COVERALLS_REPO_TOKEN && rm -rf ./coverage"
+        "test": "mocha --harmony --recursive --bail test/",
+        "test-travis": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --harmony --bail --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js --repo-token $COVERALLS_REPO_TOKEN && rm -rf ./coverage",
+        "coverage": "istanbul cover ./node_modules/.bin/_mocha -- -R spec"
+
     },
     "keywords": [
         "dynamo",
