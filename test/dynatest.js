@@ -386,7 +386,7 @@ describe('DyModel Test Suite', function() {
     //Do a big batchwrite first to put all the data in the two tables.
 
     describe('#BatchWrite', function() {
-      it('BatchWrite a few things. (with 1 second wait)', function(done) {
+      it('BatchWrite a few things. (with 1.2 second wait)', function(done) {
         this.timeout(4500);
         var payload = {
           RequestItems: {}
@@ -426,7 +426,7 @@ describe('DyModel Test Suite', function() {
               //Wait for a bit.
               done();
               return;
-            }, 1000);
+          }, 1200);
           } catch (err) {
             done(err);
             return;
@@ -498,10 +498,12 @@ describe('DyModel Test Suite', function() {
           .set('timestamp', {
             AppendToFront: true
           })
-          .set("newList", {IfNotExist: true})
+          .set("newList", {
+            IfNotExist: true
+          })
           .set("updateSet");
-          //Lets just make sure that we call this for now at least once (drop it though).
-          builder.getPayload();
+        //Lets just make sure that we call this for now at least once (drop it though).
+        console.log('Update items payload: ' + JSON.stringify(builder.getPayload(), null, 4));
         builder.send().then(function(res) {
           expect(res.Attributes.timestamp).to.have.length(2);
           expect(res.Attributes.timestamp[0].value).to.equal(timeStampValue);
@@ -510,13 +512,13 @@ describe('DyModel Test Suite', function() {
           expect(res.Attributes).to.have.property("newList");
           done();
         }, function(err) {
-            console.log('SmartUpdate() Custom Build: ERROR!');
+          console.log('SmartUpdate() Custom Build: ERROR!');
           done(err);
         });
 
       });
       it('Remove items from newList.', function(done) {
-          //THe value of newList when using remove does not matter right now.
+        //THe value of newList when using remove does not matter right now.
         var newObject = {
           "CustomerID": "Test5",
           "newList": [1]
@@ -525,20 +527,23 @@ describe('DyModel Test Suite', function() {
         var builder = dynaTable2.buildSmartUpdate(newObject, {
           "ReturnValues": "ALL_NEW"
         });
-        builder.remove("newList", {LowerBounds: 1, UpperBounds: 2});
+        builder.remove("newList", {
+          LowerBounds: 1,
+          UpperBounds: 2
+        });
         builder.send().then(function(res) {
-            expect(res.Attributes).to.have.property("newList");
-            expect(res.Attributes.newList).to.have.length(2);
-            expect(res.Attributes.newList[0]).to.equal(1);
-            expect(res.Attributes.newList[1]).to.equal(4);
-            done();
+          expect(res.Attributes).to.have.property("newList");
+          expect(res.Attributes.newList).to.have.length(2);
+          expect(res.Attributes.newList[0]).to.equal(1);
+          expect(res.Attributes.newList[1]).to.equal(4);
+          done();
         }, function(err) {
-            console.log('SmartUpdate() Remove Items from newList. ERROR');
-            done(err);
+          console.log('SmartUpdate() Remove Items from newList. ERROR');
+          done(err);
         });
       });
 
-      it('Custom Build smartUpdate: Remove Items', function(done) {
+      it('Custom Build smartUpdate: Remove Items. (1.5 second wait)', function(done) {
         var updateValue = 10;
         var newValue = 10;
         //This is 3 * 7 + 1000 for some reason. Need to figure out why.
@@ -569,13 +574,42 @@ describe('DyModel Test Suite', function() {
           expect(res.Attributes).to.not.have.property('updateSet');
           expect(res.Attributes).to.not.have.property('newValue');
           expect(res.Attributes).to.not.have.property('newList');
-          done();
+          setTimeout(function() {
+            //Wait for a bit.
+            done();
+            return;
+        }, 1500);
         }, function(err) {
-            console.log('SmartUpdate(): Custom BUild removeItems ERROR!');
+          console.log('SmartUpdate(): Custom Build removeItems ERROR!');
           done(err);
         });
 
       });
+    });
+
+    describe('UpdateItem() call.', function() {
+        it('Plain updateItem() call for table 2.', function(done) {
+            var payload = {
+                "TableName": table2Name,
+                "Key": {
+                    "CustomerID": "Test5"
+                },
+                "ReturnValues": "ALL_NEW",
+                "ExpressionAttributeNames": {
+                    "#testString": "testString"
+                },
+                "ExpressionAttributeValues": {
+                    ":testString": "TestUpdatePayload"
+                },
+                "UpdateExpression": " SET #testString = :testString"
+            }
+            dynaTable2.updateItem(payload).then(function(res) {
+                expect(res.Attributes).to.have.property('testString').to.be.equal("TestUpdatePayload");
+                done();
+            }, function(err) {
+                done(err);
+            });
+        });
     });
 
     describe('#Regular Query', function() {
@@ -764,7 +798,37 @@ describe('DyModel Test Suite', function() {
           assert.fail(err, null, "SmartQuery failed to get primary key items.");
           done(err);
         });
-      })
+      });
+
+      it('SmartQuery where range key is present, but not required.', function(done) {
+        dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME,
+          testData.t1Data[2].PrimaryHashKey,
+          null,
+          "=",
+          12, {
+            "ReturnConsumedCapacity": "TOTAL",
+            "ScanIndexForward": false
+          }).then(function(result) {
+          /*
+          For some reason returning the promise in above does not
+          catch the assertions that happen when the test fails.
+          For now these try and catch blocks in these functions will
+          suffice for what we need. We can change them later.
+          */
+          try {
+            expect(result).to.have.property("Items");
+            expect(result).to.have.property("Count", 2);
+            expect(result).to.have.property("ScannedCount", 2);
+            assert.strictEqual(result.Items[0].PrimaryHashKey, testData.t1Data[1].PrimaryHashKey);
+            //Ensure that the tableName is right and the additional parameters were included.
+            expect(result.ConsumedCapacity).to.have.property("TableName", table1Name);
+          } catch (err) {
+            done(err);
+            return;
+          }
+          done();
+        });
+      });
     });
 
     describe("#SmartBetween", function() {
