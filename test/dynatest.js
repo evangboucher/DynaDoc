@@ -114,7 +114,7 @@ describe('DyModel Test Suite', function() {
     }, function(err) {
       done();
     });
-  })
+  });
   describe('#DyModel Creation', function() {
     this.timeout(30000);
     it('Create basic DyModel for Table 1', function(done) {
@@ -426,7 +426,7 @@ describe('DyModel Test Suite', function() {
               //Wait for a bit.
               done();
               return;
-          }, 1200);
+            }, 1200);
           } catch (err) {
             done(err);
             return;
@@ -503,10 +503,18 @@ describe('DyModel Test Suite', function() {
             IfNotExist: true
           })
           .set("updateSet")
-          .set('NonExistentKey', {IgnoreMissing: true})
-          .add('NonExistentKey', {IgnoreMissing: true})
-          .deleteKey('NonExistentKey', {IgnoreMissing: true})
-          .remove('NonExistentKey', {IgnoreMissing: true});
+          .set('NonExistentKey', {
+            IgnoreMissing: true
+          })
+          .add('NonExistentKey', {
+            IgnoreMissing: true
+          })
+          .deleteKey('NonExistentKey', {
+            IgnoreMissing: true
+          })
+          .remove('NonExistentKey', {
+            IgnoreMissing: true
+          });
         //Lets just make sure that we call this for now at least once (drop it though).
         console.log('Update items payload: ' + JSON.stringify(builder.getPayload(), null, 4));
         builder.send().then(function(res) {
@@ -535,7 +543,9 @@ describe('DyModel Test Suite', function() {
         builder.remove("newList", {
           LowerBounds: 1,
           UpperBounds: 2
-      }).remove('NonExistentKey', {IgnoreMissing: true});
+        }).remove('NonExistentKey', {
+          IgnoreMissing: true
+        });
         builder.send().then(function(res) {
           expect(res.Attributes).to.have.property("newList");
           expect(res.Attributes.newList).to.have.length(2);
@@ -583,7 +593,7 @@ describe('DyModel Test Suite', function() {
             //Wait for a bit.
             done();
             return;
-        }, 1500);
+          }, 1500);
         }, function(err) {
           console.log('SmartUpdate(): Custom Build removeItems ERROR!');
           done(err);
@@ -593,28 +603,28 @@ describe('DyModel Test Suite', function() {
     });
 
     describe('UpdateItem() call.', function() {
-        it('Plain updateItem() call for table 2.', function(done) {
-            var payload = {
-                "TableName": table2Name,
-                "Key": {
-                    "CustomerID": "Test5"
-                },
-                "ReturnValues": "ALL_NEW",
-                "ExpressionAttributeNames": {
-                    "#testString": "testString"
-                },
-                "ExpressionAttributeValues": {
-                    ":testString": "TestUpdatePayload"
-                },
-                "UpdateExpression": " SET #testString = :testString"
-            }
-            dynaTable2.updateItem(payload).then(function(res) {
-                expect(res.Attributes).to.have.property('testString').to.be.equal("TestUpdatePayload");
-                done();
-            }, function(err) {
-                done(err);
-            });
+      it('Plain updateItem() call for table 2.', function(done) {
+        var payload = {
+          "TableName": table2Name,
+          "Key": {
+            "CustomerID": "Test5"
+          },
+          "ReturnValues": "ALL_NEW",
+          "ExpressionAttributeNames": {
+            "#testString": "testString"
+          },
+          "ExpressionAttributeValues": {
+            ":testString": "TestUpdatePayload"
+          },
+          "UpdateExpression": " SET #testString = :testString"
+        }
+        dynaTable2.updateItem(payload).then(function(res) {
+          expect(res.Attributes).to.have.property('testString').to.be.equal("TestUpdatePayload");
+          done();
+        }, function(err) {
+          done(err);
         });
+      });
     });
 
     describe('#Regular Query', function() {
