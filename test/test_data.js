@@ -28,7 +28,6 @@ Set of test data for mocha tests to use.
 
 
 var DynaDoc = require("../dynadoc");
-var dynaTable3 = DynaDoc.createClient('TableNameExample');
 var Joi = DynaDoc.getJoi();
 var testData = {};
 
