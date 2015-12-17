@@ -37,7 +37,7 @@ var Joi = require('joi');
 
 //Singleton factory constructor
 function DynaFactory() {
-
+    this.AWS = null;
 };
 
 /**
@@ -60,7 +60,7 @@ Creates a new DynaClient for a table.
 @returns DynaClient (Object): The client for communicating with this table.
 **/
 DynaFactory.prototype.createClient = function createClient(tableName, model, readCapacity, writeCapacity) {
-    if (!DynaFactory.AWS) {
+    if (DynaFactory.AWS === null) {
         //The setup method has not been called.
         throw Util.createError('Setup method has not yet been called! Cannot create Client.');
     }
