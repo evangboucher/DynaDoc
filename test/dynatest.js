@@ -715,8 +715,7 @@ describe('DyModel Test Suite', function() {
         return dynaTable1.smartQuery(testData.t1GlobalIndexName,
           testData.t1Data[0].GlobalSecondaryHash,
           testData.t1Data[0].GlobalSecondaryRange,
-          "=",
-          12).then(function(result) {
+          "=", {Limit: 12}).then(function(result) {
           /*
           For some reason returning the promise in above does not
           catch the assertions that happen when the test fails.
@@ -744,7 +743,7 @@ describe('DyModel Test Suite', function() {
           testData.t1Data[0].GlobalSecondaryHash,
           testData.t1Data[0].GlobalSecondaryRange,
           "=",
-          12, {
+          {
             "ReturnConsumedCapacity": "TOTAL",
             "ScanIndexForward": false
           }).then(function(result) {
@@ -819,10 +818,10 @@ describe('DyModel Test Suite', function() {
         dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME,
           testData.t1Data[2].PrimaryHashKey,
           null,
-          "=",
-          12, {
+          "=",{
             "ReturnConsumedCapacity": "TOTAL",
-            "ScanIndexForward": false
+            "ScanIndexForward": false,
+            "Limit": 12
           }).then(function(result) {
           /*
           For some reason returning the promise in above does not
@@ -851,7 +850,7 @@ describe('DyModel Test Suite', function() {
         return dynaTable1.smartBetween(dynaTable1.PRIMARY_INDEX_NAME,
           testData.t1Data[1].PrimaryHashKey,
           testData.t1Data[1].PrimaryRangeKey,
-          testData.t1Data[2].PrimaryRangeKey, 5).then(function(result) {
+          testData.t1Data[2].PrimaryRangeKey, {Limit: 5}).then(function(result) {
           try {
             expect(result).to.have.property("Items");
             expect(result).to.have.property("Count", 2);
