@@ -197,9 +197,10 @@ npm test
 
 ### Contribution guidelines ###
 
-* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or breaks other tests.
+* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or breaks other tests. 
+* Tests can be run from your own AWS account. You can provide a awscreds.json file in the /test directory. This file contains the secret key and access key for your AWS account (a user with full access to DynamoDB is succficient). If you open a new free tier account, you should not be charged anything for a successful pass of the test. If the test fails critically, it is possible that tables will be left. You may need to monitor and delete any residual tables left from critically failing tests.
 * All pull requests are reviewed and will be merged once approved by the author or repository authorities.
-* DynaDoc requires detailed comments and descriptions of functions and lines. You should throughly test functionality and produce the leanest code possible. I am happy to work with you in order to help improve and implement new features and code.
+* DynaDoc aims to have detailed comments, APIs, and descriptions of functions and lines. You should throughly test functionality and produce the leanest code possible. I am happy to work with you in order to help improve and implement new features and code.
 
 ### Who do I talk to? ###
 
@@ -224,7 +225,6 @@ DynaDoc was made by a developer who loves AWS and DynamoDB. I needed the best wa
 The current list of things that need to be done next.
 
 1. Enable temporary params into all smart functions (IE. Ability to change query result item order) Currently only SmartQuery has this feature.
-1. Add smartUpdate
 1. Add smartScan
 2. Add ability to cache failed calls due to provision capcity limit and retry with exponential backoff.
 3. Validate Batch Write calls
@@ -232,9 +232,9 @@ The current list of things that need to be done next.
 
 
 ### License ###
-Released under the terms of the CPAL-1.0 License.
+Released under the terms of the CPAL-1.0 License. CPAL-1.0 is fairly similar to MPL-V2.0, but requires an additional attribution step.
 
-CPAL-1.0 allows you to make changes, use commercially, and distribute DynaDoc with a few requirements. If you modify any file of DynaDoc, you must released the modified files under the CPAL-1.0 license and release the source. If you want to use DynaDoc, we ask that you give credit to Mohu for the use of DynaDoc in your project. This is best done by including the following three lines on/in your product's UI. If your product has a Graphical User Interface of some sort, we ask that you put these three lines somewhere an end user has access to them.
+CPAL-1.0 allows you to make changes, use commercially, and distribute DynaDoc with a few requirements. If you modify any file of DynaDoc, you must released the modified files under the CPAL-1.0 license and release the modified files. If you want to use DynaDoc, the license asks that you give credit to Mohu for the use of DynaDoc in your project. This is best done by including the following three lines on/in your product's UI where an end user can reach them. If your product has a Graphical User Interface of some sort, we ask that you put these three lines somewhere an end user has access to them.
 
 ```
 DynaDoc powered by Mohu
@@ -243,7 +243,7 @@ http://www.gomohu.com
 ```
 
 When possible please make the URL a hyper link.
-It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution. NPM will have the NOTICE.txt and LICENSE file already provided.
+It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution. NPM will have the NOTICE.txt and LICENSE file already provided for you.
 
 This site gives a good overview of the license (this is not legal advice!):
 <a href="https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary" target="_blank">CPAL-1.0</a>
