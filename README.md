@@ -8,7 +8,7 @@ With DynaDoc you can specify a Joi schema and create a new Client to represent a
 
 Current Version: 0.7.1
 
-NOTICE: DynaDoc is in Beta. Parts of this project are still under heavy development. It is certainly a good idea to begin developing with DynaDoc as the majority of existing functionality will not be changed so you can get familiar with DynaDoc's features. I am looking for feedback and ideas so please help me make this library better by creating issues and pull requests! :)   The first production instance will be v1.0.0. Planned production release date is: 1/08/2016
+NOTICE: DynaDoc is in Beta. Parts of this project are still under heavy development. It is certainly a good idea to begin developing with DynaDoc as the majority of existing functionality will not be changed so you can get familiar with DynaDoc's features. I am looking for feedback and ideas so please help me make this library better by creating issues and pull requests! :)   The first production instance will be v1.0.0. Milestones are set for production release.
 
 Quick Notes:
 1. DynaDoc is dependent on the AWS SDK and requires it through npm install. The AWS-SDK is massive, but if you are using DynamoDB then
