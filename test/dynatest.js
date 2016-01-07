@@ -843,6 +843,13 @@ describe('DyModel Test Suite', function() {
           done();
         });
       });
+
+      it('Diabolical: Pass in not enough or too many arguments.', function(done) {
+          expect(function() {dynaTable1.smartQuery()}).to.throw('Not enough arguments');
+          expect(function() {dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME);}).to.throw('Not enough arguments');
+          expect(function() {dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME, "Arg2", "Arg3", "Arg4", "Arg5", "Arg6");}).to.throw('Too many arguments');
+          done();
+      });
     });
 
     describe("#SmartBetween", function() {
