@@ -6,7 +6,7 @@ DynaDoc is a smarter DocumentClient for AWS's DynamoDB and partial ORM written i
 
 With DynaDoc you can specify a Joi schema and create a new Client to represent a table in DynamoDB. DynaDoc will create that table for you and can validate items based on the Joi Schema. The schema can contain Global and Local secondary Indexes that DynaDoc will be able to use and make calls to the DynamoDB table with ease!
 
-Current Version: 0.7.1
+Current Version: 0.7.2
 
 NOTICE: DynaDoc is in Beta. Parts of this project are still under heavy development. It is certainly a good idea to begin developing with DynaDoc as the majority of existing functionality will not be changed so you can get familiar with DynaDoc's features. I am looking for feedback and ideas so please help me make this library better by creating issues and pull requests! :)   The first production instance will be v1.0.0. Milestones are set for production release.
 
@@ -197,7 +197,7 @@ npm test
 
 ### Contribution guidelines ###
 
-* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or breaks other tests. 
+* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or breaks other tests.
 * Tests can be run from your own AWS account. You can provide a awscreds.json file in the /test directory. This file contains the secret key and access key for your AWS account (a user with full access to DynamoDB is succficient). If you open a new free tier account, you should not be charged anything for a successful pass of the test. If the test fails critically, it is possible that tables will be left. You may need to monitor and delete any residual tables left from critically failing tests.
 * All pull requests are reviewed and will be merged once approved by the author or repository authorities.
 * DynaDoc aims to have detailed comments, APIs, and descriptions of functions and lines. You should throughly test functionality and produce the leanest code possible. I am happy to work with you in order to help improve and implement new features and code.
