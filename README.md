@@ -65,7 +65,7 @@ dynaClient.getItem('<PrimaryHashKey>').then(function (err, res) { console.log(JS
 var response = yield dynaClient.getItem('<PrimaryHashKey>');
 
 //Using DynaDoc's smartQuery function. //Only the IndexesName and HashValue are required, other options can be left as undefined
-var response = yield dynaClient.smartQuery('<IndexName>', '<HashValue>', '<RangeValue>', '<Action>', '<limit>', {'<AdditionalOptions>':'<Value>'});
+var response = yield dynaClient.smartQuery('<IndexName>', '<HashValue>', '<RangeValue>', '<Action>', {'<AdditionalOptions>':'<Value>'});
 
 
 ```
@@ -146,7 +146,7 @@ DynaDoc makes one call to the table description and parses all necessary index d
 ```javascript
 //This generates the previous example dynamically.
 //                                      Index Name,            Hash Value, Range Value, Action, Limit
-var response = yield dynaClient.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange",  ">=",  12);
+var response = yield dynaClient.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange",  ">=", {Limit: 12});
 ```
 
 
