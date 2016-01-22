@@ -1,3 +1,4 @@
+"use strict";
 /*
 The contents of this file are subject to the Common Public Attribution License
 Version 1.0 (the “License”); you may not use this file except in compliance
@@ -34,10 +35,13 @@ var Util = require(path.join(LIB_FOLDER, 'util'));
 var DynaClient = require(path.join(LIB_FOLDER, 'dynadoc-client'));
 //Require Joi so our users will not have too.
 var Joi = require('joi');
+//Not using const yet to better support older versions. Option Prefix.
+var OPTION_TABLE_PREFIX = "TablePrefix";
 
 //Singleton factory constructor
 function DynaFactory() {
     this.AWS = null;
+    this.options = {};
 };
 
 /**
@@ -50,21 +54,71 @@ DynaFactory.prototype.setup = function setup(AWS) {
 }
 
 /**
+A function for setting global options for DynaDoc. Options include:
+TablePrefix <String>: A table prefix string that is applied to every
+     table created by any client made.
+**/
+DynaFactory.prototype.setGlobalOptions = function setGlobalOptions(options) {
+    if (options.hasOwnProperty(OPTION_TABLE_PREFIX)) {
+        this.options[OPTION_TABLE_PREFIX] = options[OPTION_TABLE_PREFIX];
+    }
+}
+/**
+Remove a global option from DynaDoc.
+Return true if the option was found and removed.
+False if the option was not found.
+**/
+DynaFactory.prototype.removeGlobalOption = function removeGlobalOption(optionName) {
+    if (this.options.hasOwnProperty(optionName)) {
+        delete this.options[optionName];
+        return true;
+    }
+    return false;
+}
+
+/**
+Returns the value of a global option given its name.
+**/
+DynaFactory.prototype.getGlobalOption = function getGlobalOption(optionName) {
+    if (this.options.hasOwnProperty(optionName)) {
+        return this.options[optionName]
+    }
+    return null;
+}
+/**
+Checks if DynaDoc has a global options set or not.
+Return true if the option exists and false otherwise.
+**/
+DynaFactory.prototype.hasGlobalOption = function hasGlobalOption(optionName) {
+    if (this.options.hasOwnProperty(optionName)) {
+        return true;
+    }
+    return false;
+}
+
+
+/**
 Creates a new DynaClient for a table.
 
 @param tableName (String): The string name of the table to parse.
 @param model (Object): Joi schema that represents the Table Object. [Optional]
 @param readCapacity (integer): The number of read unites for this table.  [Optional]
 @param writeCapacity (integer): The number of write units for this table. [Optional]
+@param options     (String): Options for creating a client.
 
 @returns DynaClient (Object): The client for communicating with this table.
 **/
-DynaFactory.prototype.createClient = function createClient(tableName, model, readCapacity, writeCapacity) {
+DynaFactory.prototype.createClient = function createClient(tableName, model, readCapacity, writeCapacity, options) {
     if (DynaFactory.AWS === null) {
         //The setup method has not been called.
         throw Util.createError('Setup method has not yet been called! Cannot create Client.');
     }
-    return new DynaClient(DynaFactory.AWS, tableName, model, readCapacity, writeCapacity);
+    //Append options.
+    if (this.hasGlobalOption(OPTION_TABLE_PREFIX)) {
+        tableName = this.getGlobalOption(OPTION_TABLE_PREFIX) + tableName;
+    }
+
+    return new DynaClient(DynaFactory.AWS, tableName, model, readCapacity, writeCapacity, options);
 }
 
 /**
