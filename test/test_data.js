@@ -33,6 +33,7 @@ var testData = {};
 
 
 testData.TABLE_NAME1 = "DynaDocTest1";
+testData.TABLE_NAME2_PREFIX = "Table2-";
 testData.TABLE_NAME2 = "DynaDocTest2";
 
 const T1PrimaryHashKeyName = "PrimaryHashKey";
