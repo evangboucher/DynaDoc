@@ -86,9 +86,22 @@ console.log('Table 2 Name: ' + table2Name);
 var table1ReadCapacity = 10;
 var table1WriteCapacity = 10;
 
+
+
 var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, table1ReadCapacity, table1WriteCapacity);
+//Set a global Prefix for the tables.
+DynaDoc.setGlobalOptions({
+    TablePrefix: testData.TABLE_NAME2_PREFIX
+});
 var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, 10, 8);
 
+//Make a copy of the table2Name so it does not simply reference it.
+var noPrefixTable2Name = new String(table2Name);
+/*
+The prefix is added by DynaDoc object for the client. This adds the
+prefix to be used every in the test document.
+*/
+table2Name = dynaTable2.getTableName();
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
@@ -185,7 +198,7 @@ describe('DyModel Test Suite', function() {
     });
 
     it('Attempt to create Table 2 again using ignore parameter.', function(done) {
-      var tempClient = DynaDoc.createClient(table2Name, testData.t2Schema, 1, 1);
+      var tempClient = DynaDoc.createClient(noPrefixTable2Name, testData.t2Schema, 1, 1);
       tempClient.ensurePrimaryIndex("CustomerID");
       tempClient.ensureGlobalIndex("gameID", undefined, 1, 1, testData.t2GameIDIndexName);
       tempClient.createTable(true).then(function(res) {
@@ -349,7 +362,7 @@ describe('DyModel Test Suite', function() {
     Deletes both a global and local index.
     */
     it('Delete Global gameID index from table 2', function(done) {
-      this.timeout(70000);
+      this.timeout(80000);
       dynaTable2.deleteIndex(testData.t2GameIDIndexName);
       //Kind of defeating the purpose of promises by waiting, but we need to.
       dynaTable2.updateTable().then(function(res) {
