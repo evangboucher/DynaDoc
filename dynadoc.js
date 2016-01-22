@@ -1,3 +1,4 @@
+"use strict";
 /*
 The contents of this file are subject to the Common Public Attribution License
 Version 1.0 (the “License”); you may not use this file except in compliance
@@ -34,8 +35,8 @@ var Util = require(path.join(LIB_FOLDER, 'util'));
 var DynaClient = require(path.join(LIB_FOLDER, 'dynadoc-client'));
 //Require Joi so our users will not have too.
 var Joi = require('joi');
-
-const OPTION_TABLE_PREFIX = "TablePrefix";
+//Not using const yet to better support older versions. Option Prefix.
+var OPTION_TABLE_PREFIX = "TablePrefix";
 
 //Singleton factory constructor
 function DynaFactory() {
