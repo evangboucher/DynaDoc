@@ -1,6 +1,6 @@
 {
     "name": "dynadoc",
-    "version": "0.7.4",
+    "version": "0.7.5",
     "description": "An easier and intelligent way to use DynamoDB.",
     "main": "dynadoc.js",
     "scripts": {
