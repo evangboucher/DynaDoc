@@ -53,7 +53,7 @@ if (process.env.accessKeyId && process.env.secretAccessKey) {
   AWS.config.update({
     "accessKeyId": process.env.accessKeyId,
     "secretAccessKey": process.env.secretAccessKey,
-    "region": "us-east-1"
+    "region": process.env.region
 });
   envCheck = true;
 } else {
