@@ -54,10 +54,10 @@ if (process.env.accessKeyId && process.env.secretAccessKey) {
     "accessKeyId": process.env.accessKeyId,
     "secretAccessKey": process.env.secretAccessKey,
     "region": "us-east-1"
-  })
+});
   envCheck = true;
 } else {
-  //If you want to use a file it is possible, but Travis CI uses env variables.
+  //If you want to use a file it is possible, but using env variables is recommended.
   AWS.config.loadFromPath(path.join(__dirname, 'awscreds.json'));
   envCheck = true;
 }
