@@ -51,6 +51,7 @@ other call.
 **/
 DynaFactory.prototype.setup = function setup(AWS) {
     DynaFactory.AWS = AWS;
+    return this;
 }
 
 /**
@@ -62,6 +63,7 @@ DynaFactory.prototype.setGlobalOptions = function setGlobalOptions(options) {
     if (options.hasOwnProperty(OPTION_TABLE_PREFIX)) {
         this.options[OPTION_TABLE_PREFIX] = options[OPTION_TABLE_PREFIX];
     }
+    return this;
 }
 /**
 Remove a global option from DynaDoc.
@@ -71,9 +73,8 @@ False if the option was not found.
 DynaFactory.prototype.removeGlobalOption = function removeGlobalOption(optionName) {
     if (this.options.hasOwnProperty(optionName)) {
         delete this.options[optionName];
-        return true;
     }
-    return false;
+    return this;
 }
 
 /**
@@ -102,13 +103,13 @@ Creates a new DynaClient for a table.
 
 @param tableName (String): The string name of the table to parse.
 @param model (Object): Joi schema that represents the Table Object. [Optional]
-@param readCapacity (integer): The number of read unites for this table.  [Optional]
-@param writeCapacity (integer): The number of write units for this table. [Optional]
 @param options     (String): Options for creating a client.
+ - readCapacity (integer): The number of read unites for this table.  [Optional]
+ - writeCapacity (integer): The number of write units for this table. [Optional]
 
 @returns DynaClient (Object): The client for communicating with this table.
 **/
-DynaFactory.prototype.createClient = function createClient(tableName, model, readCapacity, writeCapacity, options) {
+DynaFactory.prototype.createClient = function createClient(tableName, model, options) {
     if (DynaFactory.AWS === null) {
         //The setup method has not been called.
         throw Util.createError('Setup method has not yet been called! Cannot create Client.');
@@ -118,7 +119,7 @@ DynaFactory.prototype.createClient = function createClient(tableName, model, rea
         tableName = this.getGlobalOption(OPTION_TABLE_PREFIX) + tableName;
     }
 
-    return new DynaClient(DynaFactory.AWS, tableName, model, readCapacity, writeCapacity, options);
+    return new DynaClient(DynaFactory.AWS, tableName, model, options);
 }
 
 /**
