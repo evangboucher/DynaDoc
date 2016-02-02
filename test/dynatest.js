@@ -1027,7 +1027,8 @@ describe('DyModel Test Suite', function() {
                 var putItemsObject = {};
                 putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
                 //Because we specify a different table in batchWrite we can use any dynaDoc Client.
-                return dynaTable1.batchWrite(tableArray, putItemsObject, {
+                return dynaTable1.batchWrite(tableArray, {
+                    "PutItemsObject": putItemsObject,
                     ReturnValues: 'NONE'
                 }).then(function(result) {
                     try {
@@ -1047,7 +1048,9 @@ describe('DyModel Test Suite', function() {
                 var deleteItemsObject = {};
                 deleteItemsObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(1)];
 
-                return dynaTable2.batchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
+                return dynaTable2.batchWrite(tableArray, {
+                    DeleteItemsObject: deleteItemsObject
+                }).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
 
@@ -1074,7 +1077,10 @@ describe('DyModel Test Suite', function() {
                 var deleteItemsObject = {};
                 deleteItemsObject[table2Name] = [testData.generateKeyObjectsTable2(3), testData.generateKeyObjectsTable2(2)];
 
-                return dynaTable2.batchWrite(tableArray, putItemsObject, deleteItemsObject).then(function(result) {
+                return dynaTable2.batchWrite(tableArray, {
+                    PutItemsObject: putItemsObject,
+                    DeleteItemsObject: deleteItemsObject
+                }).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
                     } catch (err) {
@@ -1094,7 +1100,9 @@ describe('DyModel Test Suite', function() {
                 putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
                 putItemsObject[table2Name] = [testData.t2Data[2], testData.t2Data[3]];
 
-                return dynaTable1.batchWrite(tableArray, putItemsObject).then(function(result) {
+                return dynaTable1.batchWrite(tableArray, {
+                    PutItemsObject: putItemsObject
+                }).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
 
