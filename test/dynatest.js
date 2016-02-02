@@ -511,7 +511,7 @@ describe('DyModel Test Suite', function() {
                     .add('NonExistentKey', {
                         IgnoreMissing: true
                     })
-                    .deleteKey('NonExistentKey', {
+                    .deleteSet('NonExistentKey', {
                         IgnoreMissing: true
                     })
                     .remove('NonExistentKey', {
@@ -583,7 +583,7 @@ describe('DyModel Test Suite', function() {
                     "ReturnConsumedCapacity": "TOTAL",
                     "ReturnItemCollectionMetrics": "SIZE"
                 });
-                builder.add('updateValue').remove("newValue").deleteKey("updateSet").remove('newList');
+                builder.add('updateValue').remove("newValue").deleteSet("updateSet").remove('newList');
 
                 builder.send().then(function(res) {
                     expect(res.Attributes.timestamp).to.have.length(2);
