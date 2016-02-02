@@ -492,7 +492,7 @@ describe('DyModel Test Suite', function() {
                 };
                 //dynaTable2.ensurePrimaryIndex("CustomerID");
                 //Create a new builder for the object.
-                var builder = dynaTable2.buildSmartUpdate(newObject, {
+                var builder = dynaTable2.buildUpdate(newObject, {
                     "ReturnValues": "ALL_NEW",
                     "IgnoreMissing": true
                 });
@@ -539,7 +539,7 @@ describe('DyModel Test Suite', function() {
                     "newList": [1]
                 };
 
-                var builder = dynaTable2.buildSmartUpdate(newObject, {
+                var builder = dynaTable2.buildUpdate(newObject, {
                     "ReturnValues": "ALL_NEW"
                 });
                 builder.remove("newList", {
@@ -578,7 +578,7 @@ describe('DyModel Test Suite', function() {
                     "newList": 0
                 };
                 //Create a new builder for the object.
-                var builder = dynaTable2.buildSmartUpdate(newObject, {
+                var builder = dynaTable2.buildUpdate(newObject, {
                     "ReturnValues": "ALL_NEW",
                     "ReturnConsumedCapacity": "TOTAL",
                     "ReturnItemCollectionMetrics": "SIZE"
