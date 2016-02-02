@@ -42,6 +42,7 @@ var ROOT_DIR = __dirname + "/../";
 
 var fs = require('fs');
 
+var util = require('util');
 
 //The AWS object to initialize DynaDoc with.
 var AWS = require('aws-sdk');
@@ -730,9 +731,10 @@ describe('DyModel Test Suite', function() {
             it(" Query with all params but additionalOptions", function(done) {
                 return dynaTable1.query(testData.t1GlobalIndexName,
                     testData.t1Data[0].GlobalSecondaryHash,
-                    testData.t1Data[0].GlobalSecondaryRange,
-                    "=", {
-                        Limit: 12
+                    {
+                        Limit: 12,
+                        "RangeValue": testData.t1Data[0].GlobalSecondaryRange,
+                        "Action": "="
                     }).then(function(result) {
                     /*
                     For some reason returning the promise in above does not
@@ -759,10 +761,10 @@ describe('DyModel Test Suite', function() {
 
                 return dynaTable1.query(testData.t1GlobalIndexName,
                     testData.t1Data[0].GlobalSecondaryHash,
-                    testData.t1Data[0].GlobalSecondaryRange,
-                    "=", {
+                    {
                         "ReturnConsumedCapacity": "TOTAL",
-                        "ScanIndexForward": false
+                        "ScanIndexForward": false,
+                        "RangeValue": testData.t1Data[0].GlobalSecondaryRange
                     }).then(function(result) {
                     /*
                     For some reason returning the promise in above does not
@@ -790,10 +792,12 @@ describe('DyModel Test Suite', function() {
 
             it("Query Local Secondary Index.", function(done) {
                 return dynaTable1.query(testData.t1LocalIndexName,
-                    testData.t1Data[1].PrimaryHashKey,
-                    testData.t1Data[1].LocalSecondaryIndex).then(function(result) {
+                    testData.t1Data[1].PrimaryHashKey, {
+                        RangeValue: testData.t1Data[1].LocalSecondaryIndex
+                    }).then(function(result) {
                     //Check the secondary values.
                     try {
+                        util.inspect(result, {depth: 3});
                         expect(result).to.have.property("Items");
                         expect(result).to.have.property("Count", 1);
                         expect(result).to.have.property("ScannedCount", 1);
@@ -813,7 +817,9 @@ describe('DyModel Test Suite', function() {
             it("Query test Primary Index", function(done) {
                 return dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[1].PrimaryHashKey,
-                    testData.t1Data[1].PrimaryRangeKey).then(function(result) {
+                    {
+                        RangeValue: testData.t1Data[1].PrimaryRangeKey
+                    }).then(function(result) {
                     try {
                         expect(result).to.have.property("Items");
                         expect(result).to.have.property("Count", 1);
@@ -834,8 +840,7 @@ describe('DyModel Test Suite', function() {
             it('Query where range key is present, but not required.', function(done) {
                 dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[2].PrimaryHashKey,
-                    null,
-                    "=", {
+                    {
                         "ReturnConsumedCapacity": "TOTAL",
                         "ScanIndexForward": false,
                         "Limit": 12
@@ -864,13 +869,13 @@ describe('DyModel Test Suite', function() {
             it('Diabolical: Pass in not enough or too many arguments.', function(done) {
                 expect(function() {
                     dynaTable1.query()
-                }).to.throw('Not enough arguments');
+                }).to.throw('Improper amount of arguments');
                 expect(function() {
                     dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME);
-                }).to.throw('Not enough arguments');
+                }).to.throw('Improper amount of arguments');
                 expect(function() {
                     dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME, "Arg2", "Arg3", "Arg4", "Arg5", "Arg6");
-                }).to.throw('Too many arguments');
+                }).to.throw('Improper amount of arguments');
                 done();
             });
         });

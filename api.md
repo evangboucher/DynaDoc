@@ -2,10 +2,6 @@
 
 Below is the list of javascript API for DynaDoc. The API will primarily use comments from the source. This will also include an example of how it can be used.
 
-It is highly encouraged that you check out the DyModel API as well. DyModel is DynaDoc's partial ORM structure which allows for a lot more features and functionality (including smartUpdateBuilder(), createTable(), updateTable(), etc.).
-
-NOTE: DynaDoc API is not yet stable. There will be many changes and additions to the API over the next several weeks. It will not be considered stable until version 1.0.0 is released.
-
 ##Error Handling##
 
 DynaDoc will throw errors that it encounters. If DynamoDB returns an error, it is throw from DynaDoc. If the AWS-SDK throws and error, it will be thrown up to you. DynaDoc currently does not catch nor suppress any errors (unless specified in a method parameter). DynaDoc does not do any validation against passed in parameters (though I may implement this later). It will be your responsibility to make sure that the data passed to DynamoDB is valid.
@@ -14,7 +10,11 @@ DynaDoc will throw errors that it encounters. If DynamoDB returns an error, it i
 ##Factory##
 
 ```javascript
-var DynaDoc = require('dynadoc');
+/*
+Setup must be called before createClient. It only needs to be called once with
+a valid AWS object.
+*/
+var DynaDoc = require('dynadoc').setup(AWS);
 /**
 Factory function. By creating a new one, you can simply
 use the DynamoDB DocumentClient from the AWS SDK attatched as
@@ -28,25 +28,22 @@ description of the table.
 
 @returns DynaClient (Object): The client for communicating with this table.
 **/
-/*
-Setup must be called before createClient. It only needs to be called once with
-a valid AWS object.
-*/
-DynaDoc.setup(AWS);
+
 //dynaClient is a new client for the TableName provided.
-var TableClient1 = DynaDoc.createClient('<YourTableName>');
+var Table1 = DynaDoc.createClient('<YourTableName>');
 ```
 
-Factory will create a new DynaClient for the table.
+createClient will create a new DynaClient for the specific table.
 
 ---
 
 
-##DynaDoc Smart Functions ##
+##DynaDoc Functions ##
 
-Smart functions are the heart of DynaDoc. They generate the payload and everything that is necessary to make a query to DynamoDB. In order to use smart functions the describeTable() method must be finished first.
+Easy functions are the heart of DynaDoc. They generate the payload and everything that is necessary to make a query to DynamoDB. In order to use these functions the describeTable() method must be finished first or you must setup the
+a DyModel schema with Joi (Highly Recommended).
 
-Before using smart functions please make the following call as soon as you create a dynaClient or table. If you use DyModel's createTable() from a Joi schema then you will not need to call describeTable.
+Before using functions please make the following call as soon as you create a dynaClient or table. If you use DyModel's createTable() from a Joi schema then you will not need to call describeTable.
 ```javascript
 /**
  Describe a table to use smart Functions.
@@ -57,7 +54,7 @@ TableClient1.describeTable('TableName');
 
 ---
 
-#smartQuery()#
+#query()#
 
 Smart Query is the first smart function of DynaDoc. smartQuery is fairly versitile and capable of handling a lot of different situations. SmartQuery returns a raw DynamoDB response. The items you have found would be under 'Items' key and the total number found is under the key of 'Count'.
 
@@ -94,33 +91,33 @@ PrimaryIndexName to the method. IE. TableClient1.PrimaryIndexName //Is the name 
  @returns promise: Result of the query to DynamoDB.
 **/
 //A full body request with everything in it.
-var smartQueryResult = yield TableClient1.smartQuery(
+var smartQueryResult = yield Table1.query(
     "GlobalSecondary-index", //IndexName
-    "GlobalHash",            //PrimaryHash Value
-    "GlobalRange",           //PrimaryRange Value
-    "=",                     //Comparative action for the range value.
-    {                        //Additional options as defined by the AWS-SDK
+    "GlobalHash",            //PrimaryHash Value         
+    {                        //RangeValue, Action, and Additional options as defined by the AWS-SDK
+        "RangeValue": "GlobalRangeValue", //PrimaryRange Value
+        "Action": "<",                     //Comparative action for the range value.
        "ReturnConsumedCapacity": "TOTAL",
        "ScanIndexForward": false,
        "Limit": 10
     });
 
 //Same query as above but without the additional params option.
-smartQueryResult = yield TableClient1.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange", "=");
+var response = yield Table1.query("GlobalSecondary-index","GlobalHash", {RangeValue: "GlobalRangeValue", Action: ">"});
 
 //A request that does not use a limit or define an action (limit is 10 by default, action is '=')
-smartQueryResult = yield TableClient1.smartQuery("LocalSecondaryIndex-index","PrimaryHashTest", "SecondaryIndex");
+response = yield Table1.query("LocalSecondaryIndex-index","PrimaryHashTest", {RangeValue: "SecondaryIndex"});
 
 /*
 A request on the 'PrimaryIndex'. Use the PrimaryIndexName value attached to the dynaClient.
 */
-smartQueryResult = yield TableClient1.smartQuery(TableClient1.PrimaryIndexName,"PrimaryHashTest", 1);
+response = yield Table1.query(Table1.PrimaryIndexName,"PrimaryHashTest", {RangeValue: 1});
 
 ```
 
-##smartBetween()##
+##between()##
 
-Smart Between is an extension of smartQuery that allows indexes that support numeric Range values to use the BETWEEN
+Between is an extension of query that allows indexes that support numeric Range values to use the BETWEEN
 option. The BETWEEN option will query a range of two values. It is always inclusive (required from AWS-SDK).
 
 
@@ -150,15 +147,15 @@ Example Code:
 **/
 
 //A BETWEEN call to pull Range values between 0 and 10 inclusively and limit results to 5 documents.
-var smartBetweenResult = yield TableClient1.smartBetween("CustomerID-Date-index","Test1", 0, 10);
+var response = yield Table1.between("CustomerID-Date-index","Test1", 0, 10);
 
 //The same call as above, but using the Primary Index for the current table.
-smartBetweenResult = yield TableClient1.smartBetween(TableClient1.PrimaryIndexName,"Test1", 0, 10,{Limit: 5});
+response = yield Table1.between(TableClient1.PrimaryIndexName,"Test1", 0, 10,{Limit: 5});
 ```
 
-##smartBatchGet()##
+##batchGet()##
 
-SmartBatchGet allows for multiple documents to be returned form an array of objects containing hash and range values. This call does not require Describe Table, but instead relies on you to pass an array of TableNames that are used to map each additional arrays of hash and range value objects to get.
+BatchGet allows for multiple documents to be returned form an array of objects containing hash and range values. This call does not require Describe Table, but instead relies on you to pass an array of TableNames that are used to map each additional arrays of hash and range value objects to get.
 
 
 Example Response:
@@ -196,7 +193,7 @@ has the following structure:
 }
 **/
 
-var smartBatchGetResult = yield TableClient1.smartBatchGet(['<TableName>'],
+var response = yield Table1.batchGet(['<TableName>'],
 {
  '<TableName>': [{
     '<PrimaryHash>':'<PrimaryHashValue>',
@@ -206,9 +203,9 @@ var smartBatchGetResult = yield TableClient1.smartBatchGet(['<TableName>'],
 
 ```
 
-##smartBatchWrite()##
+##batchWrite()##
 
-SmartBatchWrite allows you to put and/or delete items from a table in batches. The function takes an array of Table names that are used to map arrays within the two other params to the tables. The 2nd parameter is an Object with keys of TableNames and values of arrays of objects containing the items you want to put into the table. The 3rd parameter is an object with keys of TableNames and values of an array of objects that contain the hash and range keys-value pairs to delete from the table. Both the 2nd and 3rd (Put and Delete Objects) are optional, but one must be provided or DynamoDB will throw a validation error.
+BatchWrite allows you to put and/or delete items from a table in batches. The function takes an array of Table names that are used to map arrays within the two other params to the tables. The 2nd parameter is an Object with keys of TableNames and values of arrays of objects containing the items you want to put into the table. The 3rd parameter is an object with keys of TableNames and values of an array of objects that contain the hash and range keys-value pairs to delete from the table. Both the 2nd and 3rd (Put and Delete Objects) are optional, but one must be provided or DynamoDB will throw a validation error.
 
 BatchWrite will not return more unless DynaDoc settings for ReturnValues is set.
 Example Response:
@@ -247,19 +244,19 @@ array should only have the Hash and Range key-values if applicable.
     - ReturnItemCollectionMetrics: 'SIZE' | 'NONE'
 **/
 
-var smartBatchWriteResult = yield TableClient1.smartBatchWrite(tableArray, putItemsObject, undefined, {"ReturnValues":"ALL_OLD"});
+var response = yield Table1.batchWrite(tableArray, putItemsObject, undefined, {"ReturnValues":"ALL_OLD"});
 
-smartBatchWriteResult = TableClient1.smartBatchWrite(tableArray, putItemsObject, deleteItemsObject, {"ReturnConsumedCapacity":"TOTAL"});
+response = Table1.batchWrite(tableArray, putItemsObject, deleteItemsObject, {"ReturnConsumedCapacity":"TOTAL"});
 
 //Some examples for the parameters and how they can be created.
-var tableArray = [testData.TABLE_NAME1, testData.TABLE_NAME2];
+var tableArray = ["Table1Name", "Table2Name"];
 var putItemsObject = {};
-            putItemsObject[testData.TABLE_NAME1] = [{'PrimaryHash':'hansks928ks'},{'PrimaryHash':'2jjd92a3fa9'}];
-            putItemsObject[testData.TABLE_NAME2] = [{'PrimaryHash':55, 'PrimaryRange':22}];
+            putItemsObject["Table1Name"] = [{'PrimaryHash': 'hansks928ks'},{'PrimaryHash': '2jjd92a3fa9'}];
+            putItemsObject["Table2Name"] = [{'PrimaryHash': 55, 'PrimaryRange': 22}];
 var deleteItemsObject = {};
-deleteItemsObject[testData.TABLE_NAME2] = [{'PrimaryHash':98, 'PrimaryRange':32}];
+deleteItemsObject["Table2Name"] = [{'PrimaryHash': 98, 'PrimaryRange': 32}];
 //Now use the parameters to make the dynaClient call.
-smartBatchWriteResult = TableClient1.smartBatchWrite(tableArray, putItemsObject, deleteItemsObject)
+response = Table1.batchWrite(tableArray, putItemsObject, deleteItemsObject)
 ```
 
 ---
@@ -285,7 +282,7 @@ otherwise DyanmoDB will throw an error.
 **/
 
 //Put an item into the DynamoDB table. The result of the query is put into the putResult object.
-var putResult = yield TableClient1.putItem({"PrimaryID":5423,"RangeID":23,"data":"MyData"}, {"ReturnValues":"ALL_OLD"});
+var response = yield Table1.putItem({"PrimaryID":5423,"RangeID":23,"data":"MyData"}, {"ReturnValues":"ALL_OLD"});
 ```
 
 ##getItem()##
@@ -301,7 +298,7 @@ MyHashKey is the actual key to search the table for.
 **/
 
 //Put an item into the DynamoDB table. The result of the query is put into the putResult object.
-var putResult = yield TableClient1.getItem({"PrimaryID":5423,"RangeID":23});
+var response = yield Table1.getItem({"PrimaryID":5423,"RangeID":23});
 ```
 
 
@@ -314,7 +311,7 @@ Query call on a dynamoDB table. Query a index of some sort.
 **/
 
 //The params object is the necessary Query params from the AWS-SDK DynamoDB DocumentClient.
-var queryResult = yield query(params);
+var response = yield Table1.dynamoDoc.queryAsync(params);
 ```
 
 ##queryOne()##
@@ -338,7 +335,7 @@ This method is not intelligent and requires the user to provide each structure o
 use smartQuery() to use DynaDoc's intelligent system.
 **/
 //Example query for queryOne.
-var queryOneResult = yield TableClient1.queryOne("SimpleIndex-index", "#tkey = :hkey", {":hkey":"2015-08-11T21:32:34.338Z"}, {"#tkey":"Timestamp"});
+var response = yield TableClient1.queryOne("SimpleIndex-index", "#tkey = :hkey", {":hkey":"2015-08-11T21:32:34.338Z"}, {"#tkey":"Timestamp"});
 ```
 
 ##deleteItem()##
@@ -355,7 +352,7 @@ Delete an item from the Table.
 **/
 
 //The item with PrimaryHash 5423 and Range of 23 will be removed from the table.
-var itemRemoved = yield TableClient1.deleteItem({"PrimaryID":5423,"RangeID":23});
+var response = yield Table1.deleteItem({"PrimaryID":5423,"RangeID":23});
 ```
 
 ##updateItem()##
@@ -382,7 +379,7 @@ var params = {
 **/
 
 //params is the update object similar to the one above.
-var result = yield TableClient1.updateItem(params);
+var response = yield Table1.updateItem(params);
 ```
 
 ##batchWrite()##

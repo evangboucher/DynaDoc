@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/dynadoc.svg)](https://badge.fury.io/js/dynadoc)     [![Build Status](https://travis-ci.org/evangboucher/DynaDoc.svg?branch=master)](https://travis-ci.org/evangboucher/DynaDoc)  [![Coverage Status](https://coveralls.io/repos/evangboucher/DynaDoc/badge.svg?branch=master&service=github)](https://coveralls.io/github/evangboucher/DynaDoc?branch=master)    [![Join the chat at https://gitter.im/evangboucher/DynaDoc](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/evangboucher/DynaDoc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)   [![npm downloads](https://img.shields.io/npm/dt/dynadoc.svg)](https://www.npmjs.com/package/dynadoc)
 
-DynaDoc is a smarter DocumentClient for DynamoDB and ORM written in NodeJS. 
+DynaDoc is a smarter DocumentClient for DynamoDB and ORM written in NodeJS.
 
 
 ## Getting started ##
@@ -31,32 +31,40 @@ AWS.config.update({
     "region": "<YOUR_REGION_OF_CHOICE>"
 });
 
-//Require the dynadoc module.
-var DynaDoc = require('dynadoc');
-
-//Intializes the DynaDoc singleton factory.
-DynaDoc.setup(AWS);
+/*
+Require the DynaDoc module and initialize it.
+You only ever has to call setup(AWS) once. DynaDoc
+will hold a reference to the AWS SDK so you can simply
+require it in any file you need DynaDoc in after.
+setup() is a synchronous call.
+*/
+var DynaDoc = require('dynadoc').setup(AWS);
 
 //If you have multiple tables, you can instantiate multiple DynaDocClients. You must make at least one
-var dynaClient = DynaDoc.createClient('<DynamoDBTableName>');
+var Table1 = DynaDoc.createClient('<DynamoDBTableName>');
 
 //Required in order to use the 'smart' methods of DynaDoc or use DynaDoc Model feature
-dynaClient.describeTable('<TABLE_NAME>'); //Or pass no params to use the <DynamoDBTableName> passed in above
+Table1.describeTable('<TABLE_NAME>'); //Or pass no params to use the <DynamoDBTableName> passed in above
 ```
 
 Examples of using DynaDoc:
 ```javascript
 //Using the standard DynamoDB SDK DocumentClient, uses callbacks.
-dynaClient.dynamoDoc.get('<params>', function(err, res) {console.log(JSON.stringify(res, null, 4));});
+Table1.dynamoDoc.get('<params>', function(err, res) {console.log(JSON.stringify(res, null, 4));});
 
-//Using DynaDoc's Promisfied Enpoints.  Express Framework
-dynaClient.getItem('<PrimaryHashKey>').then(function (err, res) { console.log(JSON.stringify(res, null, 4));});
+//Using DynaDoc's Promisfied Enpoints.  
+Table1.getItem('<PrimaryHashKey>').then(function (err, res) { console.log(JSON.stringify(res, null, 4));});
 
 //Using ES6 Generators
-var response = yield dynaClient.getItem('<PrimaryHashKey>');
+var response = yield Table1.getItem('<PrimaryHashKey>');
 
 //Using DynaDoc's smartQuery function. //Only the IndexesName and HashValue are required, other options can be left as undefined
-var response = yield dynaClient.smartQuery('<IndexName>', '<HashValue>', '<RangeValue>', '<Action>', {'<AdditionalOptions>':'<Value>'});
+var response = yield Table1.query('<IndexName>', '<HashValue>',
+{
+    'RangeValue': '<RangeValue>',
+    'Action': '>'
+    '<AdditionalOptions>':'<Value>'
+});
 
 
 ```
@@ -68,11 +76,9 @@ DynaDoc (as of version 0.3.0) now supports schema models! This means that you ca
 Creating a model is easy!
 ```javascript
 //Assuming the DynaDoc object already exists (with a valid AWS object from above examples)
-var DyncaDoc = require('dynadoc');
+var DynaDoc = require('dynadoc');
 //Get the Joi Validation object.
 var Joi = DynaDoc.getJoi();
-
-var tableName = "MyNewTable";
 
 //Using Joi you can create a schema
 testData.t1Schema = Joi.object().keys({
@@ -88,17 +94,17 @@ testData.t1Schema = Joi.object().keys({
 });
 
 //This creates a new DynaDoc Client that contains a model (15 and 13 are default table read and write throughput)
-var dynaTable1 = DynaDoc.createClient(tableName, testData.t1Schema, 15, 13);
+var Table1 = DynaDoc.createClient("MyNewTable", testData.t1Schema, {ReadCapacityUnits: 15, WriteCapacityUnits: 13});
 
 //For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
-dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
+Table1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 
 //This tells DynaDoc that the item GlobalSecondaryHash is a new Global Index.
 //                      Index Hash Name (from schema), Range Name,         read, write, IndexName (As it will appear in DynamoDB)
-dynaTable1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, "GlobalIndex-index");
+Table1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, "GlobalIndex-index");
 
 //Create a local index (Always share primary Hash Key):
-dynaTable1.ensureLocalIndex("LocalSecondaryIndex", "LocalIndexRange-index");
+Table1.ensureLocalIndex("LocalSecondaryIndex", "LocalIndexRange-index");
 
 /*
 Create the schema in the table. The param is a boolean to ignore and not create a new table if it already exists.
@@ -107,7 +113,7 @@ your responsibliity to ensure that the table is active (not in the creating stat
 calls to the DynamoDB table. DynaDoc provides a isTableActive() method that will return the status of
 the table as a boolean (True if active, false otherwise).
 */
-dynaTable1.createTable(true); //Returns a promise with response from DynamoDB
+Table1.createTable(true); //Returns a promise with response from DynamoDB
 ```
 
 ### What DynaDoc does for you! ###
@@ -137,7 +143,7 @@ DynaDoc makes one call to the table description and parses all necessary index d
 ```javascript
 //This generates the previous example dynamically.
 //                                      Index Name,            Hash Value, Range Value, Action, Limit
-var response = yield dynaClient.smartQuery("GlobalSecondary-index","GlobalHash", "GlobalRange",  ">=", {Limit: 12});
+var response = yield Table1.query("GlobalSecondary-index","GlobalHash", "GlobalRange",  ">=", {Limit: 12});
 ```
 
 
@@ -240,13 +246,3 @@ This site gives a good overview of the license (this is not legal advice!):
 <a href="https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary" target="_blank">CPAL-1.0</a>
 
 Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider the above sentences legal advice for any reason. Thanks!
-
----
-Software distributed under the License is distributed on an “AS IS” basis,
-WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
-the specific language governing rights and limitations under the License.
-
-The Original Code is DynaDoc.
-
-The Initial Developer of the Original Code is Evan Boucher.
-Copyright (c) 2015 Mohu Inc.  All Rights Reserved.
