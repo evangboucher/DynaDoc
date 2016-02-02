@@ -430,10 +430,9 @@ describe('DyModel Test Suite', function() {
                         "Item": testData.t2Data[3]
                     }
                 }];
+                payload.ReturnValues = 'NONE';
 
-                return dynaTable1.batchWrite(payload, {
-                    ReturnValues: 'NONE'
-                }).then(function(result) {
+                return dynaTable1.dynamoDoc.batchWriteAsync(payload).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
                         /*
@@ -486,9 +485,9 @@ describe('DyModel Test Suite', function() {
                 expect(tableSettingObject.Limit).to.be.equal(10);
             })
         });
-        //Test the smart update functions.
-        describe('#SmartUpdate Builder', function() {
-            it('Custom Build smartUpdate', function(done) {
+        //Test the  update functions.
+        describe('#Update Builder', function() {
+            it('Custom Build Update', function(done) {
                 var updateValue = 1000;
                 var newValue = 10;
                 //This is 3 * 7 + 1000 for some reason. Need to figure out why.
@@ -619,8 +618,8 @@ describe('DyModel Test Suite', function() {
             });
         });
 
-        describe('UpdateItem() call.', function() {
-            it('Plain updateItem() call for table 2.', function(done) {
+        describe('UpdateAsync() call.', function() {
+            it('Plain updateAsync() call for table 2.', function(done) {
                 var payload = {
                     "TableName": table2Name,
                     "Key": {
@@ -635,7 +634,7 @@ describe('DyModel Test Suite', function() {
                     },
                     "UpdateExpression": " SET #testString = :testString"
                 }
-                dynaTable2.updateItem(payload).then(function(res) {
+                dynaTable2.dynamoDoc.updateAsync(payload).then(function(res) {
                     expect(res.Attributes).to.have.property('testString').to.be.equal("TestUpdatePayload");
                     done();
                 }, function(err) {
@@ -658,7 +657,7 @@ describe('DyModel Test Suite', function() {
                     }
                 };
                 //Query to the database.
-                dynaTable2.query(payload).then(function(res) {
+                dynaTable2.dynamoDoc.queryAsync(payload).then(function(res) {
                     expect(res).to.have.property("Items");
                     expect(res).to.have.property("Count", 1);
                     expect(res).to.have.property("ScannedCount", 1);
@@ -726,10 +725,10 @@ describe('DyModel Test Suite', function() {
             });
         });
 
-        describe("#Smart Query", function() {
+        describe("#DynaDoc Query", function() {
 
-            it("Smart Query with all params but additionalOptions", function(done) {
-                return dynaTable1.smartQuery(testData.t1GlobalIndexName,
+            it(" Query with all params but additionalOptions", function(done) {
+                return dynaTable1.query(testData.t1GlobalIndexName,
                     testData.t1Data[0].GlobalSecondaryHash,
                     testData.t1Data[0].GlobalSecondaryRange,
                     "=", {
@@ -752,13 +751,13 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "smartQuery failed to get items!");
+                    assert.fail(err, null, "Query failed to get items!");
                     done(err);
                 });
             });
-            it("SmartQuery with All params (and some additional options)", function(done) {
+            it("Query with All params (and some additional options)", function(done) {
 
-                return dynaTable1.smartQuery(testData.t1GlobalIndexName,
+                return dynaTable1.query(testData.t1GlobalIndexName,
                     testData.t1Data[0].GlobalSecondaryHash,
                     testData.t1Data[0].GlobalSecondaryRange,
                     "=", {
@@ -784,13 +783,13 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "smartQuery failed to get items!");
+                    assert.fail(err, null, "Query failed to get items!");
                     done(err);
                 });
             });
 
-            it("SmartQuery Local Secondary Index.", function(done) {
-                return dynaTable1.smartQuery(testData.t1LocalIndexName,
+            it("Query Local Secondary Index.", function(done) {
+                return dynaTable1.query(testData.t1LocalIndexName,
                     testData.t1Data[1].PrimaryHashKey,
                     testData.t1Data[1].LocalSecondaryIndex).then(function(result) {
                     //Check the secondary values.
@@ -806,13 +805,13 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmartQuery failed to get items!");
+                    assert.fail(err, null, "Query failed to get items!");
                     done(err);
                 });
             });
 
-            it("SmartQuery test Primary Index", function(done) {
-                return dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME,
+            it("Query test Primary Index", function(done) {
+                return dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[1].PrimaryHashKey,
                     testData.t1Data[1].PrimaryRangeKey).then(function(result) {
                     try {
@@ -827,13 +826,13 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmartQuery failed to get primary key items.");
+                    assert.fail(err, null, "Query failed to get primary key items.");
                     done(err);
                 });
             });
 
-            it('SmartQuery where range key is present, but not required.', function(done) {
-                dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME,
+            it('Query where range key is present, but not required.', function(done) {
+                dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[2].PrimaryHashKey,
                     null,
                     "=", {
@@ -864,21 +863,21 @@ describe('DyModel Test Suite', function() {
 
             it('Diabolical: Pass in not enough or too many arguments.', function(done) {
                 expect(function() {
-                    dynaTable1.smartQuery()
+                    dynaTable1.query()
                 }).to.throw('Not enough arguments');
                 expect(function() {
-                    dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME);
+                    dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME);
                 }).to.throw('Not enough arguments');
                 expect(function() {
-                    dynaTable1.smartQuery(dynaTable1.PRIMARY_INDEX_NAME, "Arg2", "Arg3", "Arg4", "Arg5", "Arg6");
+                    dynaTable1.query(dynaTable1.PRIMARY_INDEX_NAME, "Arg2", "Arg3", "Arg4", "Arg5", "Arg6");
                 }).to.throw('Too many arguments');
                 done();
             });
         });
 
-        describe("#SmartBetween", function() {
-            it("SmartBetween Valid", function(done) {
-                return dynaTable1.smartBetween(dynaTable1.PRIMARY_INDEX_NAME,
+        describe("#Between", function() {
+            it("Between Valid", function(done) {
+                return dynaTable1.between(dynaTable1.PRIMARY_INDEX_NAME,
                     testData.t1Data[1].PrimaryHashKey,
                     testData.t1Data[1].PrimaryRangeKey,
                     testData.t1Data[2].PrimaryRangeKey, {
@@ -895,7 +894,7 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmartBetween failed to get items.");
+                    assert.fail(err, null, "Between failed to get items.");
                     done(err);
                 });
             })
@@ -1015,7 +1014,7 @@ describe('DyModel Test Suite', function() {
                     }]
                 };
 
-                return dynaTable2.batchGet(payload).then(function(result) {
+                return dynaTable2.dynamoDoc.batchGetAsync(payload).then(function(result) {
                     try {
                         expect(result).to.have.property("Responses");
                         expect(result).to.have.property("UnprocessedKeys");
@@ -1032,13 +1031,13 @@ describe('DyModel Test Suite', function() {
             });
         });
 
-        describe('#SmartBatchWrite', function() {
+        describe('#BatchWrite', function() {
             it('Write to one table.', function(done) {
                 var tableArray = [table1Name];
                 var putItemsObject = {};
                 putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
                 //Because we specify a different table in batchWrite we can use any dynaDoc Client.
-                return dynaTable1.smartBatchWrite(tableArray, putItemsObject, {
+                return dynaTable1.batchWrite(tableArray, putItemsObject, {
                     ReturnValues: 'NONE'
                 }).then(function(result) {
                     try {
@@ -1049,7 +1048,7 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
+                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             });
@@ -1058,7 +1057,7 @@ describe('DyModel Test Suite', function() {
                 var deleteItemsObject = {};
                 deleteItemsObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(1)];
 
-                return dynaTable2.smartBatchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
+                return dynaTable2.batchWrite(tableArray, undefined, deleteItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
 
@@ -1072,7 +1071,7 @@ describe('DyModel Test Suite', function() {
                         return;
                     }
                 }, function(err) {
-                    assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
+                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             });
@@ -1085,7 +1084,7 @@ describe('DyModel Test Suite', function() {
                 var deleteItemsObject = {};
                 deleteItemsObject[table2Name] = [testData.generateKeyObjectsTable2(3), testData.generateKeyObjectsTable2(2)];
 
-                return dynaTable2.smartBatchWrite(tableArray, putItemsObject, deleteItemsObject).then(function(result) {
+                return dynaTable2.batchWrite(tableArray, putItemsObject, deleteItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
                     } catch (err) {
@@ -1094,7 +1093,7 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
+                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             })
@@ -1105,7 +1104,7 @@ describe('DyModel Test Suite', function() {
                 putItemsObject[table1Name] = [testData.t1Data[3], testData.t1Data[1]];
                 putItemsObject[table2Name] = [testData.t2Data[2], testData.t2Data[3]];
 
-                return dynaTable1.smartBatchWrite(tableArray, putItemsObject).then(function(result) {
+                return dynaTable1.batchWrite(tableArray, putItemsObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedItems").to.be.empty;
 
@@ -1115,20 +1114,20 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmartBatchWrite failed to write the items to the database.");
+                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             });
 
         });
 
-        describe('#SmartBatchGet', function() {
+        describe('#BatchGet', function() {
             it("Get several items from the tables.", function(done) {
                 var tableArray = [table1Name, table2Name];
                 var batchGetKeyObject = {};
                 batchGetKeyObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(2), testData.generateKeyObjectsTable1(1)];
                 batchGetKeyObject[table2Name] = [testData.generateKeyObjectsTable2(3), testData.generateKeyObjectsTable2(2), testData.generateKeyObjectsTable2(1)];
-                return dynaTable1.smartBatchGet(tableArray, batchGetKeyObject).then(function(result) {
+                return dynaTable1.batchGet(tableArray, batchGetKeyObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedKeys");
                         expect(result.UnprocessedKeys).to.be.empty;
@@ -1145,7 +1144,7 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmartBatchGet Failed to get the items from the database.");
+                    assert.fail(err, null, "BatchGet Failed to get the items from the database.");
                     done(err);
                 });
             });
@@ -1155,7 +1154,7 @@ describe('DyModel Test Suite', function() {
                 var batchGetKeyObject = {};
                 batchGetKeyObject[table1Name] = [testData.generateNonExistentKeyObjectsTable1(1), testData.generateNonExistentKeyObjectsTable1(2)];
                 batchGetKeyObject[table2Name] = [testData.generateNonExistentKeyObjectsTable2(1), testData.generateNonExistentKeyObjectsTable2(2)];
-                return dynaTable1.smartBatchGet(tableArray, batchGetKeyObject).then(function(result) {
+                return dynaTable1.batchGet(tableArray, batchGetKeyObject).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedKeys");
                         expect(result.UnprocessedKeys).to.be.empty;
@@ -1191,9 +1190,9 @@ describe('DyModel Test Suite', function() {
                 /*
                 batchGetKeyObject[table1Name] = [testData.generateNonExistentKeyObjectsTable1(1), testData.generateNonExistentKeyObjectsTable1(2)];
                 */
-                dynaTable1.smartBatchGet(tableArray, batchGetKeyObject).then(function(result) {
+                dynaTable1.batchGet(tableArray, batchGetKeyObject).then(function(result) {
                     //This is the fail case.
-                    done(new Error('DynaDoc SmartBatchGet accepted invalid key data and did not throw an error'));
+                    done(new Error('DynaDoc BatchGet accepted invalid key data and did not throw an error'));
                 }, function(err) {
                     //Called because the response should fail.
                     done();
