@@ -2,6 +2,8 @@
 
 Below is the list of javascript API for DynaDoc. The API will primarily use comments from the source. This will also include an example of how it can be used.
 
+- [`DynaDoc Functions`](#dynadoc-functions)
+
 ##Error Handling##
 
 DynaDoc will throw errors that it encounters. If DynamoDB returns an error, it is throw from DynaDoc. If the AWS-SDK throws and error, it will be thrown up to you. DynaDoc currently does not catch nor suppress any errors (unless specified in a method parameter). DynaDoc does not do any validation against passed in parameters (though I may implement this later). It will be your responsibility to make sure that the data passed to DynamoDB is valid.
@@ -38,7 +40,7 @@ createClient will create a new DynaClient for the specific table.
 ---
 
 
-##DynaDoc Functions ##
+## `DynaDoc Functions`
 
 Easy functions are the heart of DynaDoc. They generate the payload and everything that is necessary to make a query to DynamoDB. In order to use these functions the describeTable() method must be finished first or you must setup the
 a DyModel schema with Joi (Highly Recommended).
