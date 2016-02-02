@@ -2,14 +2,55 @@
 
 Below is the list of javascript API for DynaDoc. The API will primarily use comments from the source. This will also include an example of how it can be used.
 
+
 - [`DynaDoc Functions`](#dynadoc-functions)
+  - [`createClient(AWS)`](#createclient)
+  - [`describeTable('<TableName>')`](#describetable)
+  - [`query()`](#query)
+  - [`between()`](#between)
+  - [`batchGet()`](#batchget)
+  - [`batchWrite()`](#batchwrite)
+  - [`DynamoDoc Promise API`](#dynadoc-promise-api)
+  - [`putItem()`](#putitem)
+  - [`getItem()`](#getitem)
+  - [`queryAsync()`](#queryasync)
+  - [`queryOne()`](#queryone)
+  - [`deleteItem()`](#deleteitem)
+  - [`updateItem()`](#updateitem)
+  - [`batchWrite()`](#batchwrite)
+  - [`setSettings()`](#setsettings)
+  - [`getTableName()`](#gettablename)
 
-##Error Handling##
+- [`DyModel`](#dymodel)
+  - [`Getting Started`](#getting-started)
+  - [`DyModel Methods`](#dymodel-methods)
+    - [`ensurePrimaryIndex()`](#ensureprimaryindex)
+    - [`ensureGlobalIndex()`](#ensureglobalindex)
+    - [`updateGlobalIndex()`](#updateglobalindex)
+    - [`ensureLocalIndex()`](#ensurelocalindex)
+    - [`deleteIndex()`](#deleteindex)
+    - [`setTableThroughput()`](#settablethroughput)
+    - [`getThroughput()`](#getthroughput)
+    - [`isTableActive()`](#istableactive)
+    - [`createTable()`](#createtable)
+    - [`updateTable()`](#updatetable)
+    - [`getTablePayload()`](#gettablepayload)
+    - [`toSimpleObject()`](#tosimpleobject)
+    - [`buildSmartUpdate()`](#buildsmartupdatenewobject-options)
+      - [`add()`](#addkey-options)
+      - [`set()`](#setkey-options)
+      - [`remove()`](#removekey-options)
 
-DynaDoc will throw errors that it encounters. If DynamoDB returns an error, it is throw from DynaDoc. If the AWS-SDK throws and error, it will be thrown up to you. DynaDoc currently does not catch nor suppress any errors (unless specified in a method parameter). DynaDoc does not do any validation against passed in parameters (though I may implement this later). It will be your responsibility to make sure that the data passed to DynamoDB is valid.
+
+## `DynaDoc Functions`
+
+Easy functions are the heart of DynaDoc. They generate the payload and everything that is necessary to make a query to DynamoDB. In order to use these functions the describeTable() method must be finished first or you must setup the
+a DyModel schema with Joi (Highly Recommended).
+
+Before using functions please make the following call as soon as you create a dynaClient or table. If you use DyModel's createTable() from a Joi schema then you will not need to call describeTable.
 
 ---
-##Factory##
+## `createClient()`
 
 ```javascript
 /*
@@ -39,24 +80,27 @@ createClient will create a new DynaClient for the specific table.
 
 ---
 
+## `describeTable()`
 
-## `DynaDoc Functions`
+This is an important method as it allows DynaDoc to be smart. DynaDoc will always parse the
+result of this call and update its settings object. You can potentially change tables by calling this method
+(It is recommended to create a separate dynaClient object for each table). This call should only be called
+immediately after the dynaClient is created.
 
-Easy functions are the heart of DynaDoc. They generate the payload and everything that is necessary to make a query to DynamoDB. In order to use these functions the describeTable() method must be finished first or you must setup the
-a DyModel schema with Joi (Highly Recommended).
-
-Before using functions please make the following call as soon as you create a dynaClient or table. If you use DyModel's createTable() from a Joi schema then you will not need to call describeTable.
 ```javascript
 /**
- Describe a table to use smart Functions.
-@param TableName (String): The name of the table for DynaDoc to use.
+Function will make a call to get details about a table.
+
+@param TableName : The Name of the DynamoDB table to query.
 **/
-TableClient1.describeTable('TableName');
+
+//This returns the DynamoDB table description.
+var tableDescription = TableClient1.describeTable('TableName');
 ```
 
 ---
 
-#query()#
+## `query()`
 
 Smart Query is the first smart function of DynaDoc. smartQuery is fairly versitile and capable of handling a lot of different situations. SmartQuery returns a raw DynamoDB response. The items you have found would be under 'Items' key and the total number found is under the key of 'Count'.
 
@@ -117,7 +161,7 @@ response = yield Table1.query(Table1.PrimaryIndexName,"PrimaryHashTest", {RangeV
 
 ```
 
-##between()##
+## `between()`
 
 Between is an extension of query that allows indexes that support numeric Range values to use the BETWEEN
 option. The BETWEEN option will query a range of two values. It is always inclusive (required from AWS-SDK).
@@ -155,7 +199,7 @@ var response = yield Table1.between("CustomerID-Date-index","Test1", 0, 10);
 response = yield Table1.between(TableClient1.PrimaryIndexName,"Test1", 0, 10,{Limit: 5});
 ```
 
-##batchGet()##
+## `batchGet()`
 
 BatchGet allows for multiple documents to be returned form an array of objects containing hash and range values. This call does not require Describe Table, but instead relies on you to pass an array of TableNames that are used to map each additional arrays of hash and range value objects to get.
 
@@ -205,7 +249,7 @@ var response = yield Table1.batchGet(['<TableName>'],
 
 ```
 
-##batchWrite()##
+## `batchWrite()`
 
 BatchWrite allows you to put and/or delete items from a table in batches. The function takes an array of Table names that are used to map arrays within the two other params to the tables. The 2nd parameter is an Object with keys of TableNames and values of arrays of objects containing the items you want to put into the table. The 3rd parameter is an object with keys of TableNames and values of an array of objects that contain the hash and range keys-value pairs to delete from the table. Both the 2nd and 3rd (Put and Delete Objects) are optional, but one must be provided or DynamoDB will throw a validation error.
 
@@ -263,11 +307,11 @@ response = Table1.batchWrite(tableArray, putItemsObject, deleteItemsObject)
 
 ---
 
-#DynaDoc Promise API#
+# `DynaDoc Promise API`
 
 DynaDoc has promisfied several of the AWS-SDK DocumentClient methods. They function identically to the AWS-SDK, but they now return promises (callbacks before).
 
-##putItem()##
+## `putItem()`
 
 ```javascript
 /**
@@ -287,7 +331,7 @@ otherwise DyanmoDB will throw an error.
 var response = yield Table1.putItem({"PrimaryID":5423,"RangeID":23,"data":"MyData"}, {"ReturnValues":"ALL_OLD"});
 ```
 
-##getItem()##
+## `getItem()`
 
 ```javascript
 /**
@@ -304,7 +348,7 @@ var response = yield Table1.getItem({"PrimaryID":5423,"RangeID":23});
 ```
 
 
-##query()##
+## `queryAsync()`
 
 ```javascript
 /**
@@ -316,7 +360,7 @@ Query call on a dynamoDB table. Query a index of some sort.
 var response = yield Table1.dynamoDoc.queryAsync(params);
 ```
 
-##queryOne()##
+## `queryOne()`
 
 ```javascript
 /**
@@ -340,7 +384,7 @@ use smartQuery() to use DynaDoc's intelligent system.
 var response = yield TableClient1.queryOne("SimpleIndex-index", "#tkey = :hkey", {":hkey":"2015-08-11T21:32:34.338Z"}, {"#tkey":"Timestamp"});
 ```
 
-##deleteItem()##
+## `deleteItem()`
 
 ```javascript
 /**
@@ -357,7 +401,7 @@ Delete an item from the Table.
 var response = yield Table1.deleteItem({"PrimaryID":5423,"RangeID":23});
 ```
 
-##updateItem()##
+## `updateItem()`
 
 ```javascript
 /**
@@ -384,7 +428,7 @@ var params = {
 var response = yield Table1.updateItem(params);
 ```
 
-##batchWrite()##
+## `batchWrite()`
 
 ```javascript
 /**
@@ -405,26 +449,7 @@ Note: You must provide table names in the params.
 var result = yield TableClient1.batchWrite(payload, {ReturnValues: 'ALL_NEW'});
 ```
 
-##describeTable()##
-
-This is an important method as it allows DynaDoc to be smart. DynaDoc will always parse the
-result of this call and update its settings object. You can potentially change tables by calling this method
-(It is recommended to create a separate dynaClient object for each table). This call should only be called
-immediately after the dynaClient is created.
-
-```javascript
-/**
-Function will make a call to get details about a table.
-
-@param TableName : The Name of the DynamoDB table to query.
-**/
-
-//This returns the DynamoDB table description.
-var tableDescription = TableClient1.describeTable('TableName');
-```
-
-
-##setSettings()##
+## `setSettings()`
 
 Sets a few specific settings in the payload for DynamoDB. This method does not give you access to the payloads or the ability to dynamically add fields to the payload. The settings set here are the default items that are sent with every request.
 
@@ -452,7 +477,7 @@ TableClient1.setSettings({"ReturnValues":"ALL_OLD"});
 ```
 
 
-## getTableName() ##
+## `getTableName()`
 
 Simply returns the table name of this TableClient1.
 
@@ -461,13 +486,13 @@ var tableName = TableClient1.getTableName();
 ```
 ---
 
-# DyModel #
+# `DyModel`
 
 DyModel is DynaDoc's model API. DyModel allows DynaDoc to use a schema created by you to in turn create a DynamoDB table representing that schema. The DyModel object also exposes Joi validation methods so that objects can be validated against the provided table schema.
 
 This Wiki page shows the methods and examples to using DynaDoc's model feature.
 
-## Getting Started ##
+## `Getting Started`
 
 DyModel is used to represent what a table should look like in DynamoDB. DyModel is reliant upon the Joi validation library. A Joi schema is parsed and used to create a DynamoDB table.
 
@@ -552,11 +577,11 @@ Now everwhere you require the model in file dynaTable1.js you will get that obje
 
 ---
 
-## Methods ##
+## `DyModel Methods`
 
 Below is a list of methods for the DyModel API.
 
-### ensurePrimaryIndex() ##
+### `ensurePrimaryIndex()`
 
 Ensures that the table (DyModel) uses the given arguments as the primary index.
 
@@ -571,7 +596,7 @@ TableClient1.ensurePrimaryIndex("<MyHashKeyName>", "<MyRangeKeyName>");
 ```
 ---
 
-### ensureGlobalIndex() ###
+### `ensureGlobalIndex()`
 
 Ensures that a global index for the given arguments will exist in the given table. This will add a global index to the tablePayload. If createTable() has not yet been called on this table, then this method will prepare the index for the createTable() method. If createTable() method was already called, then this will prepare the index to be added after the table creation. IE. You can then use updateTable() to create the index (note that this may take additional time, even several minutes).
 
@@ -593,7 +618,7 @@ TableClient1.ensureGlobalIndex("<MyGlobalHashKeyName>", "<MyGlobalRangeKeyName>"
 ```
 ---
 
-### updateGlobalIndex() ###
+### `updateGlobalIndex()`
 
 Function to update the throughput of a global index. This adds the necessary details to the tablePayload, but you must still call updateTable() to push the changes to the table.
 
@@ -613,7 +638,7 @@ TableClient1.updateGlobalIndex("<MyGlobalIndexName>", 5, 4);
 ```
 ---
 
-### deleteIndex() ###
+### `deleteIndex()`
 
 This function will delete the given global index name from the DynamoDB table. This function will create the necessary information for the deletion and add it to the tablePayload object. You will need to call updateTable() in order to push the table changes.
 
@@ -627,7 +652,7 @@ before changes can take affect.
 TableClient1.deleteIndex("<MyGlobalIndexName>");
 ```
 
-### ensureLocalIndex() ###
+### `ensureLocalIndex()`
 
 Ensures that a local index with the given name and range key exists in the table. Only works with create table. update table does not work yet.
 
@@ -649,7 +674,7 @@ TableClient1.ensureLocalIndex("<MyRangeKeyName>", "<LocalIndexName>", {"ProjectT
 ```
 ---
 
-### setTableThroughput() ###
+### `setTableThroughput()`
 
 Adds the new table throughput to the tablePayload object. You must call updateTable() to make changes to the DynamoDB table (See updateTable() for details).
 
@@ -663,7 +688,7 @@ TableClient1.setTableThroughput(10, 15);
 ```
 ---
 
-### getThroughput() ###
+### `getThroughput()`
 
 Returns the current tableThroughput for the DynaDoc client object. This does not query the table, but uses what is stored locally.
 
@@ -674,7 +699,7 @@ console.log('The Read throughput is: ' + throughputObject.ReadCapacityUnits);
 console.log('The Write throughput is: ' + throughputObject.WriteCapacityUnits
 ```
 ---
-### isTableActive() ###
+### `isTableActive()`
 
 Checks if the table is in the active state.
 
@@ -690,7 +715,7 @@ TableClient1.isTableActive().then(function(res) {
 ```
 ---
 
-### createTable() ###
+### `createTable()`
 
 After you have called all the ensure methods that you would like (or setThroughput methods), you can call createTable to try and create the table. If the table already exists, an error is thrown and a new table is not created. If the table does not exist, the method should create your table and will return immediately. It will be up to you to ensure that you do not make any calls to the table until it is in the active state. The amount of time it will take is dependent upon the size of table throughput you are requesting. You can use isTableActive() to figure out if a table is active.
 
@@ -715,7 +740,7 @@ TableClient1.createTable(true);
 ```
 ---
 
-### updateTable() ###
+### `updateTable()`
 
 Given the previous ensure methods and set throughput methods, this function will push all the new updates to the table. If the table is already not in an active state then this method will throw the error. This method will return immediately upon a successful call. Once updateTable() is called, then the pending changes from other DynaDoc methods will be pushed to the table. The table will enter the Updating state. No further changes can be made until the table returns to the active state (typically anything not using the indexes being updated will still be functional).  It is your responsibility to ensure that the table is in an active state before making any calls to it (otherwise you will get errors).
 
@@ -734,7 +759,7 @@ TableClient1.updateTable();
 ---
 
 
-### getTablePayload() ###
+### `getTablePayload()`
 
 Returns the current tablePayload. This is the object that will be sent to DynamoDB after either the createTable() or updateTable() methods are called.
 
@@ -745,7 +770,7 @@ console.log(JSON.stringify(tablePayload, null, 4));
 ```
 
 ---
-###toSimpleObject()###
+### `toSimpleObject()`
 
 Returns the DynaClient object as a smaller human friendly object. Good for simple debugging or sanity checks.
 
@@ -756,7 +781,7 @@ console.log( JSON.stringify( TableClient1.toSimpleObject(), null, 4));
 
 ---
 
-##buildSmartUpdate(newObject, options)##
+## `buildSmartUpdate(newObject, options)`
 
 Creates a new smartUpdate builder which can then build a DynamoDB update query.
 
@@ -809,11 +834,11 @@ builder.send().then(function(res) { console.log("Update Success! " + res);});
 
 The updateBuilder functionality is very powerful and is a future that will be continually developed. Below are the current list of features and functions available for users.
 
-###add(key, options)###
+### `add(key, options)`
 
 The add function follows the AWS specification for ADD action in the updateExpression. This is best used with integer values and sets (not lists!). You should visit the AWS documentation for the updateExpression feature for more information: [AWS UpdateExpression Actions](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.Modifying.html#Expressions.Modifying.UpdateExpressions.ADD)  
 
-###set(key, options)###
+### `set(key, options)`
 
 Set is probably the most diverse action for DynaDoc. It allows you to set an integer and/or list items as well as sets.
 
@@ -876,7 +901,7 @@ builder.send().then(function(res) {
 }, function(err){console.log(err)});
 ```
 
-###remove(key, options)###
+### `remove(key, options)`
 
 Remove is used to remove a key or element from a list. If you are utilizing DynamoDB sets then you will need to use deleteKey() instead of remove.
 
@@ -938,6 +963,11 @@ builder2.remove("OldArray", {LowerBounds: 2, UpperBounds: 4}).send();
 
 //After the async call is successfully completed, OldArray should contain [1,5,6]
 ```
+
+## `Error Handling`
+
+DynaDoc will throw errors that it encounters. If DynamoDB returns an error, it is throw from DynaDoc. If the AWS-SDK throws and error, it will be thrown up to you. DynaDoc currently does not catch nor suppress any errors (unless specified in a method parameter). DynaDoc does not do any validation against passed in parameters (though I may implement this later). It will be your responsibility to make sure that the data passed to DynamoDB is valid.
+
 ---
 
 Thanks and please let me know how I can improve this tool! Open issues to request new features and bugs you have found. Please provide as much detail with reproducible test cases. Thanks in advanced!
