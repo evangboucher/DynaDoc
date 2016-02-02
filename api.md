@@ -20,26 +20,31 @@ Below is the list of javascript API for DynaDoc. The API will primarily use comm
   - [`batchWrite()`](#batchwrite)
   - [`setSettings()`](#setsettings)
   - [`getTableName()`](#gettablename)
-
-- [`DyModel`](#dymodel)
-  - [`Getting Started`](#getting-started)
-  - [`DyModel Methods`](#dymodel-methods)
-    - [`ensurePrimaryIndex()`](#ensureprimaryindex)
-    - [`ensureGlobalIndex()`](#ensureglobalindex)
-    - [`updateGlobalIndex()`](#updateglobalindex)
-    - [`ensureLocalIndex()`](#ensurelocalindex)
-    - [`deleteIndex()`](#deleteindex)
-    - [`setTableThroughput()`](#settablethroughput)
-    - [`getThroughput()`](#getthroughput)
-    - [`isTableActive()`](#istableactive)
-    - [`createTable()`](#createtable)
-    - [`updateTable()`](#updatetable)
-    - [`getTablePayload()`](#gettablepayload)
-    - [`toSimpleObject()`](#tosimpleobject)
-    - [`buildSmartUpdate()`](#buildsmartupdatenewobject-options)
-      - [`add()`](#addkey-options)
-      - [`set()`](#setkey-options)
-      - [`remove()`](#removekey-options)
+  - [`DyModel`](#dymodel)
+    - [`Getting Started`](#getting-started)
+    - [`DyModel Methods`](#dymodel-methods)
+      - [`ensurePrimaryIndex()`](#ensureprimaryindex)
+      - [`ensureGlobalIndex()`](#ensureglobalindex)
+      - [`updateGlobalIndex()`](#updateglobalindex)
+      - [`ensureLocalIndex()`](#ensurelocalindex)
+      - [`deleteIndex()`](#deleteindex)
+      - [`setTableThroughput()`](#settablethroughput)
+      - [`getThroughput()`](#getthroughput)
+      - [`isTableActive()`](#istableactive)
+      - [`createTable()`](#createtable)
+      - [`updateTable()`](#updatetable)
+      - [`getTablePayload()`](#gettablepayload)
+      - [`toSimpleObject()`](#tosimpleobject)
+      - [`buildSmartUpdate()`](#buildupdatenewobject-options)
+        - [`add(key, options)`](#addkey-options)
+        - [`set(key, options)`](#setkey-options)
+        - [`setList(key, options)`](#setlistkey-options)
+        - [`remove(key, options)`](#removekey-options)
+        - [`deleteSet(key, options)`](#deletesetkey-options)
+        - [`getPayload()`](#getpayload)
+        - [`compilePayload()`](#compilepayload)
+        - [`isLocked()`](#islocked)
+        - [`send()`](#send)
 
 
 ## `DynaDoc Functions`
@@ -781,9 +786,9 @@ console.log( JSON.stringify( TableClient1.toSimpleObject(), null, 4));
 
 ---
 
-## `buildSmartUpdate(newObject, options)`
+## `buildUpdate(newObject, options)`
 
-Creates a new smartUpdate builder which can then build a DynamoDB update query.
+Creates a new buildUpdate builder which can then build a DynamoDB update query. The newObject is taken in and referenced to update DynamoDB. You reference new values to update in the newObject by its key. DynaDoc will then build the necessary payload to update the dynamoDB document with the new key/value (once you call send()).
 
 ```javascript
 /**
@@ -820,7 +825,7 @@ var newObject = {
 
 
 //Create a new builder for the object.
-var builder = dynaTable2.buildSmartUpdate(newObject, {
+var builder = Table1.buildUpdate(newObject, {
    "ReturnValues": "ALL_NEW"
 });
 /*
@@ -850,7 +855,7 @@ field to be pushed to the database). After this call the database will
 eventually (unless you have strong consistency set on the table) be
 integerField: 22
 */
-var builder = TableClient1.buildSmartUpdate({integerField: 22});
+var builder = Table1.buildUpdate({integerField: 22});
 var result = yield builder.set('integerField').send();
 ```
 
@@ -871,7 +876,7 @@ Other options:
        AppendToFront Option. If it already exists, no change is made to the database.
 
 */
-yield TableClient1.buildSmartUpdate({newList: [2]}).set("newList", {IfNotExist: true}).send();
+var updatedItem = yield Table1.buildUpdate({newList: [2]}).set("newList", {IfNotExist: true}).send();
 
 
 /*
@@ -879,7 +884,7 @@ Appends to the front the value of 4 onto the newList item previously made and
 pushes it to the database table. If the AppendToFront option is not provided,
 then the item is always added to the end of the list.
 */
-yield TableClient1.buildSmartUpdate({newList: [4]})
+updatedItem = yield Table1.buildUpdate({newList: [4]})
    .set('timestamp', {
       AppendToFront: true
    })
@@ -890,7 +895,7 @@ yield TableClient1.buildSmartUpdate({newList: [4]})
 To set Items which are not lists, you simply reference them as you would a list with options you want.
 ```javascript
 //Create a new builder object with the given object.
-var builder = TableClient1.buildSmartUpdate({"myString": "hello", "otherString": "yes", "numberValue": 5});
+var builder = TableClient1.buildUpdate({"myString": "hello", "otherString": "yes", "numberValue": 5});
 
 //This tells the builder to use the myString and numberValue in the update payload.
 builder.set('myString').set("numberValue");
@@ -900,6 +905,29 @@ builder.send().then(function(res) {
    console.log('The dynamoDB response to the update: ' + res);
 }, function(err){console.log(err)});
 ```
+
+### `setList(key, options)`
+
+Update method for updating an array type value. set() will call setList() if the key/value you provide is an array for its value. The follow example is taken from above. Using set() on an array shoulf result in the same as if you were to use setList(). If you know that an key will always point to an array, then you can use setList().
+
+```javascript
+/**
+Update builder method for updating a List (Array) type.
+
+@param key (string): The name of the key for the newObject that the builder was initailzed with.
+@param options (Object): A key value object with potential options listed below:
+    -IgnoreMissing: If true, ignores if an action is taken on a key and the
+       key is not present. Default: false
+    - AppendToFront: true | false   [Defaul: false] : Append the given value
+     to the front of a list.
+    - Index (integer): The index that the value in the array will replace.
+    - setIfNotExist (Boolean): True to use if_not_exists() method. Overrides
+       AppendToFront Option. If it already exists, no change is made to the database.
+**/
+var updatedItem = yield Table1.buildUpdate({newList: [2]}).set("newList", {IfNotExist: true}).send();
+
+```
+
 
 ### `remove(key, options)`
 
@@ -928,7 +956,7 @@ var myItem = {
   NumberVal: 110 //Primary Range Key
 };
 //Build a new smart Update builder with myItem as the object to build from.
-var builder = TableClient1.buildSmartUpdate(myItem);
+var builder = Table1.buildUpdate(myItem);
 //Call remove to remove the test field from the object, and send() to commit it to the database.
 builder.remove("test").send();
 
@@ -951,18 +979,63 @@ var myItem = {
 };
 
 //Build a new smart Update builder with myItem as the object to build from.
-var builder1 = TableClient1.buildSmartUpdate(myItem);
+var builder1 = Table1.buildUpdate(myItem);
 
 //Remove whatever item is in position 0 in the database OldArray attribute.
 builder1.remove("OldArray", {LowerBounds: 0}).send();
 
-var builder2 = TableClient1.buildSmartUpdate(myItem);
+var builder2 = Table1.buildUpdate(myItem);
 
 //Remove every item in the OldArray attribute list between index 2(inclusive) and 4 (inclusive)
 builder2.remove("OldArray", {LowerBounds: 2, UpperBounds: 4}).send();
 
 //After the async call is successfully completed, OldArray should contain [1,5,6]
 ```
+
+
+### `deleteSet(key, options)`
+
+Delete an item from a set or the entire dynamoDB set itself. This function will not work on any datatype other than a DynamoDB set. 
+
+```javascript
+/**
+Delete a item from a set or the set itself. This does not work with anything
+but DynamoDB sets.
+
+@param options (Object): Options for a smartUpdate.
+   -IgnoreMissing: If true, ignores if an action is taken on a key and the
+       key is not present. Default: false
+**/
+/**
+Assume that in Table1 of DynamoDB, there is an item like the following:
+{
+  'test': <DynamoDB Set Type>
+}
+**/
+//We want to remove the 'test' set from the object.
+var myItem = {
+  'test': 'asdfwfa ---this string does not matter since we are deleting the whole set!',
+  'value': 500
+};
+//This will remove the set from myItem in DynamoDB
+var response = Table1.buildUpdate(myItem).deleteSet('test').send();
+
+```
+
+
+### `isLocked()`
+
+### `getPayload()`
+
+### `compilePayload()`
+
+### `send()`
+
+
+
+
+
+
 
 ## `Error Handling`
 
