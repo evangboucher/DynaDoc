@@ -344,21 +344,6 @@ describe('DyModel Test Suite', function() {
             @TODO We cannot test updateTable as global indexes take minutes to
             create...we can test that the function produces a valid update
             object though. Then in theory, the update should work with no problem.
-            dynaTable2.updateTable().then(function(res) {
-                console.log('The updateTable response after adding index. =============');
-                console.log(JSON.stringify(res, null, 4));
-                console.log('======== END UPDATE TABLE RESPONSE ========');
-                console.log('THe settings object after parsing:');
-                dynaTable2.printSettings();
-                console.log('END SETTINGS object -------------');
-                setTimeout(function() {
-                    //Wait for the table to be updated
-                    done();
-                    return;
-                }, 55000);
-            }, function(err) {
-                done(err);
-            });
             */
         });
 

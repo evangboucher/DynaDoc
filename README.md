@@ -36,15 +36,25 @@ Require the DynaDoc module and initialize it.
 You only ever has to call setup(AWS) once. DynaDoc
 will hold a reference to the AWS SDK so you can simply
 require it in any file you need DynaDoc in after.
-setup() is a synchronous call.
+setup() is a synchronous call that returns DynaDoc
 */
 var DynaDoc = require('dynadoc').setup(AWS);
 
 //If you have multiple tables, you can instantiate multiple DynaDocClients. You must make at least one
 var Table1 = DynaDoc.createClient('<DynamoDBTableName>');
 
-//Required in order to use the 'smart' methods of DynaDoc or use DynaDoc Model feature
-Table1.describeTable('<TABLE_NAME>'); //Or pass no params to use the <DynamoDBTableName> passed in above
+/*
+Describe Table is meant to be used if you do not use the Dymodel methods.
+Creating a schema is the recommended way to use DynaDoc, but this is left
+for projects that do not want a schema.
+
+*/
+Table1.describeTable('<TABLE_NAME>').then(function(res) {
+    console.log('DynaDoc is now ready!');
+}).catch(function(err) {
+    console.error('Error describing table. DynaDoc will not work.');
+    throw err;
+});
 ```
 
 Examples of using DynaDoc:
@@ -52,26 +62,36 @@ Examples of using DynaDoc:
 //Using the standard DynamoDB SDK DocumentClient, uses callbacks.
 Table1.dynamoDoc.get('<params>', function(err, res) {console.log(JSON.stringify(res, null, 4));});
 
-//Using DynaDoc's Promisfied Enpoints.  
-Table1.getItem('<PrimaryHashKey>').then(function (err, res) { console.log(JSON.stringify(res, null, 4));});
+/*
+Using DynaDoc's Promisfied Enpoints.  
+*/
+Table1.dynamoDoc.getAsync({<Params>}).then(function(res) {console.log('Got response from getAsync().')});
 
-//Using ES6 Generators
-var response = yield Table1.getItem('<PrimaryHashKey>');
+/*
+DynaDoc's getItem()KeyObject function.
+*/
+Table1.getItem({
+    "<PrimaryHashKey>": "<PrimaryHashValue>",
+    "<PrimaryRangeKey>": "<PrimaryRangeValue>"
+}).then(function (err, res) { console.log('Got response from getItem()');});
 
 //Using DynaDoc's smartQuery function. //Only the IndexesName and HashValue are required, other options can be left as undefined
-var response = yield Table1.query('<IndexName>', '<HashValue>',
-{
-    'RangeValue': '<RangeValue>',
-    'Action': '>'
-    '<AdditionalOptions>':'<Value>'
-});
+var response = yield Table1.query(
+    '<IndexName>',
+    '<HashValue>',
+    {
+        'RangeValue': '<RangeValue>',
+        'Action': '>'
+        '<AdditionalOptions>':'<Value>'
+    }
+);
 
 
 ```
 
 ### Using DynaDoc's DyModel Feature ###
 
-DynaDoc (as of version 0.3.0) now supports schema models! This means that you can specify a specific DynaClient object with a model to represent a table. DynaDoc will then create the DynamoDB table based on that model and will then be able to validate items against that model. Creating models is helpful as it allows for dynamic adjustments for a DynamoDB table. Adjust the throughput, create new indexes, update index throughput, delete indexes, and/or remove old tables to build new ones! DynaDoc will help you do it!
+DynaDoc supports models and schemas! This means that you can specify a specific DynaClient object with a model to represent a table. DynaDoc will then create the DynamoDB table based on that model and will then be able to validate items against that model. Creating models is helpful as it allows for dynamic adjustments for a DynamoDB table. Adjust the throughput, create new indexes, update index throughput, delete indexes, and/or remove old tables to build new ones! DynaDoc will help you do it!
 
 Creating a model is easy!
 ```javascript
@@ -94,14 +114,20 @@ testData.t1Schema = Joi.object().keys({
 });
 
 //This creates a new DynaDoc Client that contains a model (15 and 13 are default table read and write throughput)
-var Table1 = DynaDoc.createClient("MyNewTable", testData.t1Schema, {ReadCapacityUnits: 15, WriteCapacityUnits: 13});
+var Table1 = DynaDoc.createClient("MyNewTable", testData.t1Schema, {"ReadCapacityUnits": 15, "WriteCapacityUnits": 13});
 
-//For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
+/*
+For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
+*/
 Table1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 
-//This tells DynaDoc that the item GlobalSecondaryHash is a new Global Index.
-//                      Index Hash Name (from schema), Range Name,         read, write, IndexName (As it will appear in DynamoDB)
-Table1.ensureGlobalIndex("GlobalSecondaryHash", "GlobalSecondaryRange", 5, 4, "GlobalIndex-index");
+/*
+This tells DynaDoc that the item GlobalSecondaryHash is a new Global Index.
+    Index Hash Name (from schema), Range Name, read, write, IndexName (As it will appear in DynamoDB)
+*/
+Table1.ensureGlobalIndex("GlobalIndex-index", "GlobalSecondaryHash", "GlobalSecondaryRange", {
+    ReadCapacityUnits: 5,
+    WriteCapacityUnits: 5 });
 
 //Create a local index (Always share primary Hash Key):
 Table1.ensureLocalIndex("LocalSecondaryIndex", "LocalIndexRange-index");
@@ -170,13 +196,6 @@ setSettings will allow you to add default values to every payload. Currently the
 * ReturnValues: <String> 'NONE | ALL_OLD | UPDATED_OLD | ALL_NEW | UPDATED_NEW'
 * ReturnConsumedCapacity: <String> 'INDEXES | TOTAL | NONE'
 * ReturnItemCollectionMetrics: <String> 'SIZE | NONE'
-
-### Dependencies ###
-A special thanks to all of the libraries that DynaDoc is dependent on. Could not do it without them! :)
-
-* <a href="https://www.npmjs.com/package/aws-sdk" target="_blank">aws-sdk</a>
-* <a href="https://github.com/hapijs/joi" target="_blank">Joi</a>
-* <a href="https://www.npmjs.com/package/q" target="_blank">Q Promises</a>
 
 ### How to run tests ###
 DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions. You should setup your aws testing region in us-east-1, or change the test.
