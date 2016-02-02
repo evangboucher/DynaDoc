@@ -597,7 +597,7 @@ dynaTable1.createTable(true).then(function(res) {
   then they will not be created again and you can instantly use DynaDoc like normal! :)
   IE. You will have to find a clever way to wait for the table to be created the first time.
   */
-  console.log('Table has begun creation.");
+  console.log("Table has begun creation.");
 }); //Returns a promise with response from DynamoDB
 
 /*
