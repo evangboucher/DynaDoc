@@ -567,7 +567,9 @@ describe('DyModel Test Suite', function() {
                     .set("newList", {
                         IfNotExist: true
                     })
-                    .set("updateSet")
+                    .set("updateSet", {
+                        IgnoreMissing: true
+                    })
                     .set('NonExistentKey', {
                         IgnoreMissing: true
                     })
@@ -582,7 +584,8 @@ describe('DyModel Test Suite', function() {
                     });
                 //Lets just make sure that we call this for now at least once (drop it though).
                 console.log('Update items payload: ' + JSON.stringify(builder.getPayload(), null, 4));
-                builder.send().then(function(res) {
+                //Purposely calling compilePayload() twice to ensure it is a builder method as well.
+                builder.compilePayload().compilePayload().send().then(function(res) {
                     expect(res.Attributes.timestamp).to.have.length(2);
                     expect(res.Attributes.timestamp[0].value).to.equal(timeStampValue);
                     assert(res.Attributes.updateValue === expectedValue, "updateValue is not what was expected!");
@@ -1199,7 +1202,9 @@ describe('DyModel Test Suite', function() {
                 var batchGetKeyObject = {};
                 batchGetKeyObject[table1Name] = [testData.generateKeyObjectsTable1(3), testData.generateKeyObjectsTable1(2), testData.generateKeyObjectsTable1(1)];
                 batchGetKeyObject[table2Name] = [testData.generateKeyObjectsTable2(3), testData.generateKeyObjectsTable2(2), testData.generateKeyObjectsTable2(1)];
-                return dynaTable1.batchGet(tableArray, batchGetKeyObject).then(function(result) {
+                return dynaTable1.batchGet(tableArray, batchGetKeyObject, {
+                    ScanIndexForward: true
+                }).then(function(result) {
                     try {
                         expect(result).to.have.property("UnprocessedKeys");
                         expect(result.UnprocessedKeys).to.be.empty;

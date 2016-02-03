@@ -8,7 +8,7 @@ Below is the list of javascript API for DynaDoc. The API will primarily use comm
   - [`describeTable('<TableName>')`](#describetable)
   - [`query(indexName, hashValue, options)`](#queryindexname-hashvalue-options)
   - [`between(indexName, hashValue, lowerRangeValue, upperRangeValue, options)`](#betweenindexname-hashvalue-lowerrangevalue-upperrangevalue-options)
-  - [`batchGet(arrayOfTableNames, batchGetKeyObject)`](#batchgetarrayoftablenames-batchgetkeyobject))
+  - [`batchGet(arrayOfTableNames, batchGetKeyObject, options)`](#batchgetarrayoftablenames-batchgetkeyobject-options))
   - [`batchWrite(arrayOfTableNames, options)`](#batchwritearrayoftablenames-options)
   - [`DynaDoc Dynamo DocumentClient Promise API`](#dynadoc-dynamo-documentclient-promise-api)
   - [`putItem(item, options)`](#putitemitem-options)
@@ -209,7 +209,7 @@ var response = yield Table1.between("CustomerID-Date-index","Test1", 0, 10);
 response = yield Table1.between(Table1.PrimaryIndexName,"Test1", 0, 10,{Limit: 5});
 ```
 
-## `batchGet(arrayOfTableNames, batchGetKeyObject)`
+## `batchGet(arrayOfTableNames, batchGetKeyObject, options)`
 
 BatchGet allows for multiple documents to be returned form an array of objects containing hash and range values. This call does not require Describe Table, but instead relies on you to pass an array of TableNames that are used to map each additional arrays of hash and range value objects to get.
 
@@ -255,6 +255,8 @@ var response = yield Table1.batchGet(['<TableName>'],
     '<PrimaryHash>':'<PrimaryHashValue>',
     '<PrimaryRange>':'<PrimaryRangeValue>'
   }]
+}, {
+    "ScanIndexForward": true
 });
 
 ```
