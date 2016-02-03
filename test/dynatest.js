@@ -497,7 +497,6 @@ describe('DyModel Test Suite', function() {
                         return;
                     }
                 }, function(err) {
-                    assert.fail(err, null, "BatchWrite Failed to write data!");
                     done(err);
                 });
             });
@@ -1119,7 +1118,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             });
