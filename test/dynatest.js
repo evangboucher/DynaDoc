@@ -88,13 +88,17 @@ console.log('Table 2 Name: ' + table2Name);
 var table1ReadCapacity = 10;
 var table1WriteCapacity = 10;
 
-
-
+//Call this one first so it does not have the Prefix.
 var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, {ReadCapacityUnits: table1ReadCapacity, WriteCapacityUnits: table1WriteCapacity});
+
+
+
 //Set a global Prefix for the tables.
 DynaDoc.setGlobalOptions({
     TablePrefix: testData.TABLE_NAME2_PREFIX
 });
+
+
 var dynaTable2 = DynaDoc.createClient(table2Name, testData.t2Schema, {ReadCapacityUnits: table1ReadCapacity, WriteCapacityUnits: table1WriteCapacity});
 
 //Make a copy of the table2Name so it does not simply reference it.
@@ -107,6 +111,28 @@ table2Name = dynaTable2.getTableName();
 
 //The default timeout for every call.
 var DEFAULT_TIMEOUT = 3500;
+
+
+/**
+Test global DynaDoc object. (the root object).
+**/
+describe('DynaDoc Global Object', function() {
+    it('GlobalOptions', function() {
+        //Set a global Prefix for the tables.
+        DynaDoc.setGlobalOptions({
+            TablePrefix: testData.TABLE_NAME2_PREFIX
+        });
+        expect(DynaDoc.hasGlobalOption("TablePrefix")).to.be.equal(true)
+        DynaDoc.removeGlobalOption("TablePrefix");
+        expect(DynaDoc.getGlobalOption("TablePrefix")).to.be.null;
+        //Set a global Prefix for the tables.
+        DynaDoc.setGlobalOptions({
+            TablePrefix: testData.TABLE_NAME2_PREFIX
+        });
+        expect(DynaDoc.getGlobalOption("TablePrefix")).to.be.equal(testData.TABLE_NAME2_PREFIX);
+    });
+});
+
 
 describe('DyModel Test Suite', function() {
     after('Deleting tables...', function(done) {
@@ -207,9 +233,11 @@ describe('DyModel Test Suite', function() {
         });
 
         it('Attempt to create Table 2 again using ignore parameter.', function(done) {
+            expect(DynaDoc.getGlobalOption("TablePrefix")).to.be.equal(testData.TABLE_NAME2_PREFIX);
             var tempClient = DynaDoc.createClient(noPrefixTable2Name, testData.t2Schema, {ReadCapacityUnits: 1, WriteCapacityUnits: 1});
             tempClient.primaryIndex("CustomerID");
             tempClient.globalIndex(testData.t2GameIDIndexName, "gameID");
+            expect(tempClient.getTableName()).to.be.equal(dynaTable2.getTableName());
             tempClient.createTable(true).then(function(res) {
                 done();
             }, function(err) {
@@ -662,6 +690,27 @@ describe('DyModel Test Suite', function() {
                     done(err);
                 });
             });
+
+            it('UpdateItem() call for table 2.', function (done) {
+                var payload = {
+                    "TableName": table2Name,
+                    "Key": {
+                        "CustomerID": "Test5"
+                    },
+                    "ReturnValues": "ALL_NEW",
+                    "ExpressionAttributeNames": {
+                        "#testString": "testString"
+                    },
+                    "ExpressionAttributeValues": {
+                        ":testString": "TestUpdatePayload3"
+                    },
+                    "UpdateExpression": " SET #testString = :testString"
+                }
+                dynaTable2.updateItem(payload).then(function(res) {
+                    expect(res.Attributes).to.have.property('testString').to.be.equal("TestUpdatePayload3");
+                    done();
+                });
+            });
         });
 
         describe('#Regular Query', function() {
@@ -779,7 +828,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "Query failed to get items!");
                     done(err);
                 });
             });
@@ -811,7 +859,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "Query failed to get items!");
                     done(err);
                 });
             });
@@ -835,7 +882,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "Query failed to get items!");
                     done(err);
                 });
             });
@@ -858,7 +904,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "Query failed to get primary key items.");
                     done(err);
                 });
             });
@@ -925,7 +970,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "Between failed to get items.");
                     done(err);
                 });
             })
@@ -945,7 +989,6 @@ describe('DyModel Test Suite', function() {
 
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "DescribeTable failed to get table details.");
                     done(err);
                 });
             });
@@ -964,7 +1007,6 @@ describe('DyModel Test Suite', function() {
                         return;
                     }, 1000);
                 }, function(err) {
-                    assert.fail(err, null, "DescribeTable Failed to get table Details.");
                     done(err);
                 });
             });
@@ -986,7 +1028,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "Put Item failed to place the item in the database.");
                     done(err);
                 });
             });
@@ -1001,7 +1042,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "PutItem Failed to place the item in the database.");
                     done(err);
                 });
             });
@@ -1022,13 +1062,10 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "GetItem failed to retrieve the item.");
                     done(err);
                 });
             });
         });
-
-
 
         describe('#BatchGet', function() {
             it('Batch Get a few items.', function(done) {
@@ -1056,7 +1093,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "BatchGet failed to get the item(s).");
                     done(err);
                 });
             });
@@ -1105,7 +1141,6 @@ describe('DyModel Test Suite', function() {
                         return;
                     }
                 }, function(err) {
-                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             });
@@ -1130,7 +1165,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             })
@@ -1153,7 +1187,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "BatchWrite failed to write the items to the database.");
                     done(err);
                 });
             });
@@ -1183,7 +1216,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "BatchGet Failed to get the items from the database.");
                     done(err);
                 });
             });
@@ -1208,7 +1240,6 @@ describe('DyModel Test Suite', function() {
                     }
                     done();
                 }, function(err) {
-                    assert.fail(err, null, "SmarBatchGet Failed to make the query to the database.");
                     done(err);
                 });
             });
