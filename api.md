@@ -30,7 +30,7 @@ Below is the list of javascript API for DynaDoc. The API will primarily use comm
       - [`setTableThroughput(readCapacity, writeCapacity)`](#settablethroughputreadcapacity-writecapacity)
       - [`getThroughput()`](#getthroughput)
       - [`setMaxThroughput(max)`](#setmaxthroughputmax)
-      - [`setDynamoStreams(streamEnabled, streamType)`](#setdynamostreamsstreamEnabled-streamtype)
+      - [`setDynamoStreams(streamEnabled, streamType)`](#setdynamostreamsstreamenabled-streamtype)
       - [`isTableActive()`](#istableactive)
       - [`createTable(ignoreAlreadyExists)`](#createtableignorealreadyexists)
       - [`updateTable()`](#updatetable)
