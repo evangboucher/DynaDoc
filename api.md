@@ -22,14 +22,15 @@ Below is the list of javascript API for DynaDoc. The API will primarily use comm
   - [`DyModel`](#dymodel)
     - [`Getting Started`](#getting-started)
     - [`DyModel Methods`](#dymodel-methods)
-      - [`ensurePrimaryIndex(hashKey, rangeKey)`](#ensureprimaryindexhashkey-rangekey)
-      - [`ensureGlobalIndex(indexName, hashkey, options)`](#ensureglobalindexindexname-hashkey-options)
+      - [`primaryIndex(hashKey, rangeKey)`](#primaryindexhashkey-rangekey)
+      - [`globalIndex(indexName, hashkey, options)`](#globalindexindexname-hashkey-options)
       - [`updateGlobalIndex(indexName, readCapacity, writeCapacity)`](#updateglobalindexindexname-readcapacity-writecapacity)
-      - [`ensureLocalIndex(indexName, rangeKey, options)`](#ensurelocalindexindexname-rangekey-options)
+      - [`localIndex(indexName, rangeKey, options)`](#localindexindexname-rangekey-options)
       - [`deleteIndex(indexName)`](#deleteindexindexname)
       - [`setTableThroughput(readCapacity, writeCapacity)`](#settablethroughputreadcapacity-writecapacity)
       - [`getThroughput()`](#getthroughput)
       - [`setMaxThroughput(max)`](#setmaxthroughputmax)
+      - [`setDynamoStreams(streamEnabled, streamType)`](#setdynamostreamsstreamEnabled-streamtype)
       - [`isTableActive()`](#istableactive)
       - [`createTable(ignoreAlreadyExists)`](#createtableignorealreadyexists)
       - [`updateTable()`](#updatetable)
@@ -285,12 +286,12 @@ and DeleteRequest. Make sure that table names match the object keys.
     - ReturnValues: 'NONE' | 'ALL_OLD' | 'UPDATED_OLD' | 'ALL_NEW' | 'UPDATED_NEW'
     - ReturnConsumedCapacity: 'INDEXES | 'TOTAL' | 'NONE'
     - ReturnItemCollectionMetrics: 'SIZE' | 'NONE'
-    
+
     - DeleteItemsObject (Object): An object whos keys are TableNames and values
     are arrays of key objects of documents that should be removed from that table.
     The object structure is identical to putItemObject, but the items inside the
     array should only have the Hash and Range key-values if applicable.
-    
+
     - PutItemsObject (Object): An object whos Keys are tableNames and values
        are arrays of objects to put into each table.
 
@@ -503,7 +504,7 @@ Table1.printSettings();
 
 # `DyModel`
 
-DyModel is an extension to DynaDoc to enable Model and Schema support. DyModel allows DynaDoc to use a schema created by you via Joi to in turn create a DynamoDB table representing that schema. The DyModel object also exposes Joi validation methods so that objects can be validated against the provided table schema. 
+DyModel is an extension to DynaDoc to enable Model and Schema support. DyModel allows DynaDoc to use a schema created by you via Joi to in turn create a DynamoDB table representing that schema. The DyModel object also exposes Joi validation methods so that objects can be validated against the provided table schema.
 
 DyModel is the most **recommended** way to use DynaDoc as it does not require a describeTable() call. The Joi schema you provide along with what indexes you want to create will provide all that DynaDoc needs.
 
@@ -566,22 +567,22 @@ var dynaTable1 = DynaDoc.createClient("MyNewTable", testSchema, {"ReadCapacityUn
 For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
 Note: each ensure method returns the client object (builder methdology). These calls are synchronous and chainable.
 */
-dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
+dynaTable1.primaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 
 //This tells DynaDoc that the item GlobalSecondaryHash is a new Global Index.
-//         IndexName (As it will appear in DynamoDB), Index Hash Name (from schema), Range Name, read, write, 
-.ensureGlobalIndex(
-  "GlobalIndex-index", 
-  "GlobalSecondaryHash", 
+//         IndexName (As it will appear in DynamoDB), Index Hash Name (from schema), Range Name, read, write,
+.globalIndex(
+  "GlobalIndex-index",
+  "GlobalSecondaryHash",
   {
     "RangeValue": "GlobalSecondaryRange",
-    "ReadCapacityUnits": 5, 
+    "ReadCapacityUnits": 5,
     "WriteCapacityUnits": 7
   }
 );
 
 //Create a local index (Always share primary Hash Key):
-dynaTable1.ensureLocalIndex("LocalSecondaryIndex", "LocalIndexRange-index");
+dynaTable1.localIndex("LocalSecondaryIndex", "LocalIndexRange-index");
 
 /*
 Create the schema in the table. The param is a boolean to ignore and not create a new table if it already exists.
@@ -615,9 +616,10 @@ Now everwhere you require the model in file dynaTable1.js you will get that obje
 
 Below is a list of methods for the DyModel API.
 
-### `ensurePrimaryIndex(hashKey, rangeKey)`
+### `primaryIndex(hashKey, rangeKey)`
 
-Ensures that the table (DyModel) uses the given arguments as the primary index.
+Adds the given keys to the tablePayload as the primary index keys for the table.
+This must be the first index method called for your model (best practice). Hash keys are taken from the Joi schema keys passed in during the createClient() method.
 
 ```javascript
 /**
@@ -626,17 +628,17 @@ Create the primary Index. You must call this and call it first!
 @param rangeKey (String): The name of the range key in your Joi model (optional)
    Leave as Undefined if you do not want to specify a range Key
 **/
-Table1.ensurePrimaryIndex("<MyHashKeyName>", "<MyRangeKeyName>");
+Table1.primaryIndex("<MyHashKeyName>", "<MyRangeKeyName>");
 ```
 ---
 
-### `ensureGlobalIndex(indexName, hashkey, options)`
+### `globalIndex(indexName, hashkey, options)`
 
-Ensures that a global index for the given arguments will exist in the given table. This will add a global index to the tablePayload. If createTable() has not yet been called on this table, then this method will prepare the index for the createTable() method. If createTable() method was already called, then this will prepare the index to be added after the table creation. IE. You can then use updateTable() to create the index (note that this may take additional time, even several minutes).
+Adds a global index for the given arguments to the tablePayload. If createTable() has not yet been called on this table, then this method will prepare the index for the createTable() method. If createTable() method was already called, then this will prepare the index to be added after the table creation. IE. You can then use updateTable() to create the index (note that this may take additional time, even several minutes).
 
 ```javascript
 /**
-Ensures that a global index or the indexObject passed in will be created.
+Adds a global index to the table Payload.
 @param hashKey (String): The name of your hashkey in your Joi model.
 @param rangeKey (String): The name of the range key in your Joi model (optional)
    Leave as Undefined if you do not want to specify a range Key
@@ -648,7 +650,7 @@ Ensures that a global index or the indexObject passed in will be created.
    - NonKeyAttributes: Array of Strings when Project is INCLUDE.
        Strings are the attribute names to project into the index.
 **/
-Table1.ensureGlobalIndex("<MyGlobalHashKeyName>", "<MyGlobalRangeKeyName>", 10, 11, "<MyIndexName>", {"ProjectionType": "ALL");
+Table1.globalIndex("<MyGlobalHashKeyName>", "<MyGlobalRangeKeyName>", 10, 11, "<MyIndexName>", {"ProjectionType": "ALL");
 ```
 ---
 
@@ -674,7 +676,7 @@ Table1.updateTable().then(function(res) {
   console.log('Success updating the table.');
   /*
   You must wait until the table is out of the UPDATEING state to use this index.
-  This function is asynchronous, so you muse use isTableActive() to determine when the table 
+  This function is asynchronous, so you muse use isTableActive() to determine when the table
   becomes active again.
   */
 });
@@ -695,14 +697,14 @@ before changes can take affect.
 Table1.deleteIndex("<MyGlobalIndexName>");
 ```
 
-### `ensureLocalIndex(indexName, rangeKey, options)`
+### `localIndex(indexName, rangeKey, options)`
 
-Ensures that a local index with the given name and range key exists in the table. Only works with create table. update table does not work yet.
+Adds a local index with the given name and range key exists in the table. Only works with create table. Update table does not work as you cannot update a local index after it is created. Provisioned throughput is consumed through the tables capacity.
 
 ```javascript
 /**
-Ensures that a secondary local index or the indexobject passed in will be
-created. The hashKey is always the primary hash key. THis means that the primary
+Adds a secondary local index to the table payload.
+created. The hashKey is always the primary hash key. This means that the primary
 index must be ensured before any local indexes.
 
 @param rangeKey (String): The name of the range key in your Joi model (optional)
@@ -713,7 +715,7 @@ index must be ensured before any local indexes.
    - NonKeyAttributes: Array of Strings when Project is INCLUDE.
        Strings are the attribute names to project into the index.
 **/
-Table1.ensureLocalIndex("<MyRangeKeyName>", "<LocalIndexName>", {"ProjectType": "INCLUDE", "NonKeyAttributes":["timestamp"]);
+Table1.localIndex("<MyRangeKeyName>", "<LocalIndexName>", {"ProjectType": "INCLUDE", "NonKeyAttributes":["timestamp"]);
 ```
 ---
 
@@ -752,7 +754,48 @@ Simply sets the max possible throughput for the table. Neither read nor write wi
 Set the max throughput for the given table.
 **/
 //Table1 throughput cannot exceed 100 read and write capacity. IE. setTableThroughput(200) would throw an error.
-Table1.setMaxThroughput(100)'
+Table1.setMaxThroughput(100);
+```
+
+### `setDynamoStreams(streamEnabled, streamType)`
+
+
+Adds StreamSpecification to the table payload. Can be used in createTable or
+updateTable. You must call createTable or updateTable for these changes to take
+effect. You CANNOT update table IOPs in any manner and also update the streams
+in the same call. You must seperate the two updateTable() calls. This is a requirement
+by DynamoDB.
+
+Note: You will receive a ResourceInUseException if you attempt to enable a
+stream on a table that already has a stream, or if you attempt to disable a
+stream on a table which does not have a stream (once you call createTable() or
+updateTable()).
+
+```javascript
+/**
+Adds StreamSpecification to the table payload. Can be used in createTable or
+updateTable. You must call createTable or updateTable for these changes to take
+effect. You CANNOT update table IOPs in any manner and also update the streams
+in the same call. You must seperate the two updateTable() calls. This is a requirement
+by DynamoDB.
+
+Note: You will receive a ResourceInUseException if you attempt to enable a
+stream on a table that already has a stream, or if you attempt to disable a
+stream on a table which does not have a stream (once you call createTable() or
+updateTable()). DynaDoc throws an error before the updateTable() calls
+dynamoDB
+
+@params streamEnabled (boolean): True to enable streams, false to disable.
+@params streamType (String): The type of stream this table will provide.
+   - options are (choose one): 'NEW_IMAGE | OLD_IMAGE | NEW_AND_OLD_IMAGES | KEYS_ONLY'
+@returns this DynaClient (builder model)
+
+@throws: Error if you attempt to adjust table or index IOPs in the same updateTable() call.
+**/
+//This will enable streams with type of NEW_IMAGE
+Table1.setDynamoStreams(true, 'NEW_IMAGE');
+//You can call updateTable() immediately for the changes to take effect.
+Table1.updateTable();
 ```
 
 ### `isTableActive()`
@@ -773,7 +816,7 @@ Table1.isTableActive().then(function(res) {
 
 ### `createTable(ignoreAlreadyExists)`
 
-After you have called all the ensure methods that you would like (or setThroughput methods), you can call createTable to try and create the table. If the table already exists, an error is thrown and a new table is not created. If the table does not exist, the method should create your table and will return immediately. It will be up to you to ensure that you do not make any calls to the table until it is in the active state. The amount of time it will take is dependent upon the size of table throughput you are requesting. You can use isTableActive() to figure out if a table is active.
+After you have called all the index methods that you would like (or setThroughput methods), you can call createTable to try and create the table. If the table already exists, an error is thrown and a new table is not created. If the table does not exist, the method should create your table and will return immediately. It will be up to you to ensure that you do not make any calls to the table until it is in the active state. The amount of time it will take is dependent upon the size of table throughput you are requesting. You can use isTableActive() to figure out if a table is active.
 
 ```javascript
 /**
@@ -798,7 +841,7 @@ Table1.createTable(true);
 
 ### `updateTable()`
 
-Given the previous ensure methods and set throughput methods, this function will push all the new updates to the table. If the table is already not in an active state then this method will throw the error. This method will return a promise  immediately. Once updateTable() is called, then the pending changes from other DynaDoc methods will be pushed to the table. The table will enter the Updating state. No further changes can be made until the table returns to the active state (typically anything not using the indexes being updated will still be functional).  It is your responsibility to ensure that the table is in an active state before making any calls to it (otherwise you will get errors).
+Given the previous index methods and set throughput methods, this function will push all the new updates to the table. If the table is already not in an active state then this method will throw the error. This method will return a promise  immediately. Once updateTable() is called, then the pending changes from other DynaDoc methods will be pushed to the table. The table will enter the Updating state. No further changes can be made until the table returns to the active state (typically anything not using the indexes being updated will still be functional).  It is your responsibility to ensure that the table is in an active state before making any calls to it (otherwise you will get errors).
 
 You must call describeTable() once the table returns to the active state in order to use the index or to know if it was deleted. It is highly discourage to use this method to update anything other than provisioned throughput for indexes and tables. It is recommended that you do manual addition and deletion of indexes once the table has been created. Otherwise, delete the table, and reconstruct it with the new indexes and parameters if you don't care about the data in the old table.
 
@@ -1065,7 +1108,7 @@ builder2.remove("OldArray", {LowerBounds: 2, UpperBounds: 4}).send();
 
 ### `deleteSet(key, options)`
 
-Delete an item from a set or the entire dynamoDB set itself. This function will not work on any datatype other than a DynamoDB set. 
+Delete an item from a set or the entire dynamoDB set itself. This function will not work on any datatype other than a DynamoDB set.
 
 ```javascript
 /**
@@ -1122,7 +1165,7 @@ console.log('The payload generated by DynaDoc update builder is: ' + JSON.string
 
 ### `compilePayload()`
 
-This is mainly an internal function unless the user wants access to the payload object generated by the update builder. Once called, no further update operations can be carried out on the builder (it will be locked). 
+This is mainly an internal function unless the user wants access to the payload object generated by the update builder. Once called, no further update operations can be carried out on the builder (it will be locked).
 
 ```javascript
 /**

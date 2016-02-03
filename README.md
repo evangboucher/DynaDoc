@@ -168,34 +168,23 @@ DynaDoc makes one call to the table description and parses all necessary index d
 
 ```javascript
 //This generates the previous example dynamically.
-//                                      Index Name,            Hash Value, Range Value, Action, Limit
-var response = yield Table1.query("GlobalSecondary-index","GlobalHash", "GlobalRange",  ">=", {Limit: 12});
+//  Index Name, Hash Value
+var response = yield Table1.query(
+    "GlobalSecondary-index",
+    "GlobalHash",
+    {
+        "RangeValue": "GlobalRange",
+        "Action": ">=",
+        Limit: 12
+    }
+);
 ```
 
 
 # API Documentation #
 
-Please visit the Wiki for API details: <a href="https://github.com/evangboucher/DynaDoc/wiki/API" target="_blank">DynaDoc Wiki</a>
+Please visit the for API for details: <a href="api.md" target="_blank">DynaDoc API</a>
 
-
-
-## How do I get set up? ##
-
-
-### Configuration ###
-DynaDoc can be configured by the following methods.
-
-### describeTable('\<TableName\>'); ###
-
-the describeTable method will query the table description and parse the response. The response is parsed into a settings object that contains all the important details about the table and its indexes (names, data types, hash and/range range keys, etc.). This method essentially resets the DynaDoc object to work with the default settings for the given TableName. If TableName is null or undefined, then the table name that the dynaDoc object was created with will be used.
-
-### setSettings({\<SettingsObject\>}); ###
-
-setSettings will allow you to add default values to every payload. Currently the following settings are supported (other settings will be ignored! IE. You cannot add custom settings!):
-
-* ReturnValues: <String> 'NONE | ALL_OLD | UPDATED_OLD | ALL_NEW | UPDATED_NEW'
-* ReturnConsumedCapacity: <String> 'INDEXES | TOTAL | NONE'
-* ReturnItemCollectionMetrics: <String> 'SIZE | NONE'
 
 ### How to run tests ###
 DynaDoc (will) use Mocha to run and test the library. DynamoDB requires that you have access to the Database to run tests by either running on an approved EC2 instance or having AWS access keys. Currently, we do not have a secure way to give anyone access to run these tests. I am looking for a way to do so and I will happily take suggestions. You should setup your aws testing region in us-east-1, or change the test.
@@ -210,21 +199,13 @@ npm test
 ```
 
 
-
-### Contribution guidelines ###
-
-* DynaDoc (will) require mocha tests for every pull request and feature added. Your pull request may not be accepted if the tests do not pass or breaks other tests.
-* Tests can be run from your own AWS account. You can provide a awscreds.json file in the /test directory. This file contains the secret key and access key for your AWS account (a user with full access to DynamoDB is succficient). If you open a new free tier account, you should not be charged anything for a successful pass of the test. If the test fails critically, it is possible that tables will be left. You may need to monitor and delete any residual tables left from critically failing tests.
-* All pull requests are reviewed and will be merged once approved by the author or repository authorities.
-* DynaDoc aims to have detailed comments, APIs, and descriptions of functions and lines. You should throughly test functionality and produce the leanest code possible. I am happy to work with you in order to help improve and implement new features and code.
-
 ### Who do I talk to? ###
 
-Questions, comments, suggestions, and/or concerns can be sent to Evan Boucher or create an issue in the Issues Tracker here on GitHub.
+If you have questions, comments, suggestions, and/or concerns you should create an relavent issue or gitter conversation about them.
 
-* Evan Boucher
+* Respository Owner/Maintainer: Evan Boucher
 * Please open issues if you discover a problem or to request a new feature.
-* Contributions are welcomed. Please create a pull request.
+* Contributions are welcomed. Please see <a href="contributing.md" target="_blank">guidelines</a> create a pull request.
 * Please use Gitter (badge is at the top of this readme) for communications about DynaDoc
 
 DynaDoc is Open Source and authored by Evan Boucher.
@@ -232,15 +213,9 @@ DynaDoc is Open Source and authored by Evan Boucher.
 Copyrighted and Sponsored by Mohu Inc. <a href="http://www.gomohu.com" target="_blank">www.gomohu.com</a>
 
 
-### Why DynaDoc? ###
-
-DynaDoc was made by a developer who loves AWS and DynamoDB. I needed the best way to access DynamoDB quickly and effectively. DynaDoc hopes to become that tool!
-
-
 ## ToDo List ##
 The current list of things that need to be done next.
 
-1. Enable temporary params into all smart functions (IE. Ability to change query result item order) Currently only SmartQuery has this feature.
 1. Add smartScan
 2. Add ability to cache failed calls due to provision capcity limit and retry with exponential backoff.
 3. Validate Batch Write calls
@@ -250,7 +225,7 @@ The current list of things that need to be done next.
 ### License ###
 Released under the terms of the CPAL-1.0 License. CPAL-1.0 is fairly similar to MPL-V2.0, but requires an additional attribution step.
 
-CPAL-1.0 allows you to make changes, use commercially, and distribute DynaDoc with a few requirements. If you modify any file of DynaDoc, you must released the modified files under the CPAL-1.0 license and release the modified files. If you want to use DynaDoc, the license asks that you give credit to Mohu for the use of DynaDoc in your project. This is best done by including the following three lines on/in your product's UI where an end user can reach them. If your product has a Graphical User Interface of some sort, we ask that you put these three lines somewhere an end user has access to them.
+Add the following three lines to your applications UI/somewhere a user can see it. Thats all! Enjoy DynaDoc!
 
 ```
 DynaDoc powered by Mohu
@@ -258,10 +233,7 @@ Copyright(c) 2015 Mohu Inc.
 http://www.gomohu.com
 ```
 
-When possible please make the URL a hyper link.
-It is important that with any distribution of DynaDoc you include an unmodified copy of the NOTICE.txt and LICENSE file with the distribution. NPM will have the NOTICE.txt and LICENSE file already provided for you.
-
-This site gives a good overview of the license (this is not legal advice!):
+For a quick summary this site gives a good overview of the license (this is not legal advice!):
 <a href="https://tldrlegal.com/license/common-public-attribution-license-version-1.0-(cpal-1.0)#summary" target="_blank">CPAL-1.0</a>
 
-Please read for full license. The above License section is only meant to help you understand what is expected. Do not consider the above sentences legal advice for any reason. Thanks!
+Please read for full license. Do not consider the above sentences legal advice for any reason. Thanks!

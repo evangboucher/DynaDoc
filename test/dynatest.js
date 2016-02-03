@@ -135,18 +135,22 @@ describe('DyModel Test Suite', function() {
         it('Create basic DyModel for Table 1', function(done) {
 
             //Ensure the important indexes that we want.
-            dynaTable1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
-            dynaTable1.ensureGlobalIndex(testData.t1GlobalIndexName,"GlobalSecondaryHash", {
+            dynaTable1.primaryIndex("PrimaryHashKey", "PrimaryRangeKey");
+            dynaTable1.globalIndex(testData.t1GlobalIndexName, "GlobalSecondaryHash",
+            {
                 "ProjectionType": "ALL",
                 "ReadCapacityUnits": 1,
                 "WriteCapacityUnits": 1,
                 "RangeKey": "GlobalSecondaryRange"
             });
-            dynaTable1.ensureLocalIndex(testData.t1LocalIndexName, "LocalSecondaryIndex", {
+            dynaTable1.localIndex(testData.t1LocalIndexName, "LocalSecondaryIndex", {
                 "ProjectionType": "KEYS_ONLY"
             });
             //Quick call to set the max throughput.
             dynaTable1.setMaxThroughput(60);
+
+            //enable streams for this table.
+            dynaTable1.setDynamoStreams(true, 'NEW_IMAGE');
 
             //make the call to create the table.
             dynaTable1.createTable(true).then(function(res) {
@@ -169,8 +173,8 @@ describe('DyModel Test Suite', function() {
         does not already have a range key.
         */
         it('Create Table 2 from model.', function(done) {
-            dynaTable2.ensurePrimaryIndex("CustomerID");
-            dynaTable2.ensureGlobalIndex(testData.t2GameIDIndexName, "gameID", {
+            dynaTable2.primaryIndex("CustomerID");
+            dynaTable2.globalIndex(testData.t2GameIDIndexName, "gameID", {
                 "ProjectionType": "INCLUDE",
                 "NonKeyAttributes": ["timestamp"]
             });
@@ -204,8 +208,8 @@ describe('DyModel Test Suite', function() {
 
         it('Attempt to create Table 2 again using ignore parameter.', function(done) {
             var tempClient = DynaDoc.createClient(noPrefixTable2Name, testData.t2Schema, {ReadCapacityUnits: 1, WriteCapacityUnits: 1});
-            tempClient.ensurePrimaryIndex("CustomerID");
-            tempClient.ensureGlobalIndex(testData.t2GameIDIndexName, "gameID");
+            tempClient.primaryIndex("CustomerID");
+            tempClient.globalIndex(testData.t2GameIDIndexName, "gameID");
             tempClient.createTable(true).then(function(res) {
                 done();
             }, function(err) {
@@ -330,7 +334,7 @@ describe('DyModel Test Suite', function() {
         it('Add another globalIndex to Table 2 (No DynamoDB call)', function() {
             this.timeout(60000);
             //Lets add the index.
-            dynaTable2.ensureGlobalIndex("TestIndex", "testIndex", {ReadCapacityUnits: 1, WriteCapacityUnits:2});
+            dynaTable2.globalIndex("TestIndex", "testIndex", {ReadCapacityUnits: 1, WriteCapacityUnits:2});
             var tablePayload = dynaTable2.getTablePayload();
             expect(tablePayload.GlobalSecondaryIndexUpdates).to.not.be.empty;
             expect(tablePayload.GlobalSecondaryIndexUpdates[0]).to.have.property('Create');
@@ -374,11 +378,42 @@ describe('DyModel Test Suite', function() {
                         done(err);
                     });
                     return;
-                }, 60000);
+                }, 50000);
             }, function(err) {
                 done(err);
             });
 
+        });
+        /**
+        Streams put the table in the updating state, but as long as
+        you are not using streams (which we are not in these tests) then
+        it will not affect other inputs.
+        **/
+        it('Disable Dynamo streams from Table 1', function(done) {
+            //enable streams for this table.
+            dynaTable1.setDynamoStreams(false);
+            dynaTable1.updateTable().then(function(res) {
+                //The table should now have streams disabled.
+                console.log('Streams disabled test result:');
+                console.log(JSON.stringify(res, null, 4));
+                done()
+
+            }).catch(function(err) {
+                done(err);
+            });
+        });
+
+        it('Diabolical testing for setDynamoStreams function.', function() {
+            expect(function() {
+                dynaTable1.setDynamoStreams();
+            }).to.throw('setDynamoStreams() must have at least one argument (streamEnabled)!');
+
+            expect(function() {
+                dynaTable1.setTableThroughput(20, 20);
+                dynaTable1.setDynamoStreams(true);
+            }).to.throw('setDynamoStreams(): You cannot update the table\'s or indexe\'s IOPs and change streams in the same call.');
+            //Reset the table payload so it does not interfere with anything.
+            dynaTable1.resetTablePayload();
         });
 
     });
@@ -490,7 +525,7 @@ describe('DyModel Test Suite', function() {
                     "newList": [1, 2, 3, 4],
                     "newValue": newValue
                 };
-                //dynaTable2.ensurePrimaryIndex("CustomerID");
+                //dynaTable2.primaryIndex("CustomerID");
                 //Create a new builder for the object.
                 var builder = dynaTable2.buildUpdate(newObject, {
                     "ReturnValues": "ALL_NEW",
@@ -658,10 +693,13 @@ describe('DyModel Test Suite', function() {
         describe('#Query One', function() {
             it('Simple Query one call.', function(done) {
                 //Pass undefined as the indexName to use the primary index.
-                dynaTable2.queryOne(undefined,
-                    "#HashName = :HashValue", {
+                dynaTable2.queryOne(
+                    undefined,
+                    "#HashName = :HashValue",
+                    {
                         ":HashValue": testData.t2Data[3].CustomerID
-                    }, {
+                    },
+                    {
                         "#HashName": "CustomerID"
                     }).then(function(res) {
                     expect(res).to.have.property("Items");
@@ -675,11 +713,14 @@ describe('DyModel Test Suite', function() {
             });
             it('Simple Query one with global index.', function(done) {
                 //Pass undefined as the indexName to use the primary index.
-                dynaTable1.queryOne(testData.t1GlobalIndexName,
-                    "#HashName = :HashValue and #RangeName = :RangeValue", {
+                dynaTable1.queryOne(
+                    testData.t1GlobalIndexName,
+                    "#HashName = :HashValue and #RangeName = :RangeValue",
+                    {
                         ":HashValue": testData.t1Data[0].GlobalSecondaryHash,
                         ":RangeValue": testData.t1Data[0].GlobalSecondaryRange
-                    }, {
+                    },
+                    {
                         "#HashName": "GlobalSecondaryHash",
                         "#RangeName": "GlobalSecondaryRange"
                     }).then(function(res) {
@@ -713,7 +754,7 @@ describe('DyModel Test Suite', function() {
 
         describe("#DynaDoc Query", function() {
 
-            it(" Query with all params but additionalOptions", function(done) {
+            it("Query with all params but additionalOptions", function(done) {
                 return dynaTable1.query(testData.t1GlobalIndexName,
                     testData.t1Data[0].GlobalSecondaryHash,
                     {
