@@ -75,7 +75,8 @@ Table1.getItem({
     "<PrimaryRangeKey>": "<PrimaryRangeValue>"
 }).then(function (err, res) { console.log('Got response from getItem()');});
 
-//Using DynaDoc's smartQuery function. //Only the IndexesName and HashValue are required, other options can be left as undefined
+//Using DynaDoc's smartQuery function. 
+//Only the IndexesName and HashValue are required, other options can be left as undefined
 var response = yield Table1.query(
     '<IndexName>',
     '<HashValue>',
@@ -101,7 +102,7 @@ var DynaDoc = require('dynadoc');
 var Joi = DynaDoc.getJoi();
 
 //Using Joi you can create a schema
-testData.t1Schema = Joi.object().keys({
+var t1Schema = Joi.object().keys({
     "PrimaryHashKey": Joi.string(),
     "PrimaryRangeKey": Joi.number().integer(),
     "GlobalSecondaryRange": Joi.string(),
@@ -114,23 +115,27 @@ testData.t1Schema = Joi.object().keys({
 });
 
 //This creates a new DynaDoc Client that contains a model (15 and 13 are default table read and write throughput)
-var Table1 = DynaDoc.createClient("MyNewTable", testData.t1Schema, {"ReadCapacityUnits": 15, "WriteCapacityUnits": 13});
+var Table1 = DynaDoc.createClient("MyNewTable", t1Schema, {"ReadCapacityUnits": 15, "WriteCapacityUnits": 13});
 
 /*
 For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
 */
-Table1.ensurePrimaryIndex("PrimaryHashKey", "PrimaryRangeKey");
+Table1.primaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 
 /*
 This tells DynaDoc that the item GlobalSecondaryHash is a new Global Index.
     Index Hash Name (from schema), Range Name, read, write, IndexName (As it will appear in DynamoDB)
 */
-Table1.ensureGlobalIndex("GlobalIndex-index", "GlobalSecondaryHash", "GlobalSecondaryRange", {
-    ReadCapacityUnits: 5,
-    WriteCapacityUnits: 5 });
+Table1.globalIndex("GlobalIndex-index",
+  "GlobalSecondaryHash",
+  {
+    "RangeValue": "GlobalSecondaryRange",
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 7
+  });
 
 //Create a local index (Always share primary Hash Key):
-Table1.ensureLocalIndex("LocalSecondaryIndex", "LocalIndexRange-index");
+Table1.localIndex("LocalSecondaryIndex", "LocalIndexRange-index");
 
 /*
 Create the schema in the table. The param is a boolean to ignore and not create a new table if it already exists.
