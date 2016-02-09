@@ -88,6 +88,9 @@ console.log('Table 2 Name: ' + table2Name);
 var table1ReadCapacity = 10;
 var table1WriteCapacity = 10;
 
+DynaDoc.setGlobalOptions({
+    "UseTLSV1": true
+});
 //Call this one first so it does not have the Prefix.
 var dynaTable1 = DynaDoc.createClient(table1Name, testData.t1Schema, {ReadCapacityUnits: table1ReadCapacity, WriteCapacityUnits: table1WriteCapacity});
 
@@ -234,6 +237,8 @@ describe('DyModel Test Suite', function() {
 
         it('Attempt to create Table 2 again using ignore parameter.', function(done) {
             expect(DynaDoc.getGlobalOption("TablePrefix")).to.be.equal(testData.TABLE_NAME2_PREFIX);
+            //Since we don't actually create the table (at least it shouldn't).
+            DynaDoc.removeGlobalOption("UseTLS1");
             var tempClient = DynaDoc.createClient(noPrefixTable2Name, testData.t2Schema, {ReadCapacityUnits: 1, WriteCapacityUnits: 1});
             tempClient.primaryIndex("CustomerID");
             tempClient.globalIndex(testData.t2GameIDIndexName, "gameID");

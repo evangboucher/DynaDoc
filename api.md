@@ -4,6 +4,10 @@ Below is the list of javascript API for DynaDoc. The API will primarily use comm
 
 
 - [`DynaDoc Functions`](#dynadoc-functions)
+  - [`setGlobalOptions(options)`](#setglobaloptionsoptions)
+  - [`removeGlobalOption(optionName)`](#removeglobaloptionoptionname)
+  - [`getGlobalOption(optionName)`](#getglobaloptionoptionname)
+  - [`hasGlobalOption(optionName)`](#hasglobaloptionoptionname)
   - [`createClient(AWS)`](#createclient)
   - [`describeTable('<TableName>')`](#describetable)
   - [`query(indexName, hashValue, options)`](#queryindexname-hashvalue-options)
@@ -60,7 +64,110 @@ a DyModel schema with Joi (Highly Recommended).
 Before using functions please make the following call as soon as you create a dynaClient or table. If you use DyModel's createTable() from a Joi schema then you will not need to call describeTable.
 
 ---
+
+## `setGlobalOptions(options)`
+
+Sets the global options for the main DynaDoc object. These options are passed onto every DynaClient created.
+
+```javascript
+/**
+A function for setting global options for DynaDoc. Options include:
+TablePrefix <String>: A table prefix string that is applied to every
+     table created by any client made.
+UseTLS1 <Boolean>: [Default: false]: Boolean that determines if DynaDoc dynamoDB
+     document client will be created to minimize the affects of ERPROTO issue with
+     Node.js and DynamoDB. This option will be removed later once Node.js and
+     AWS has resolved the ERPROTO issue with using TLS version higher than 1.
+**/
+var AWS = require('aws-sdk')
+/*
+Here you may need to include Secrete keys if running outside of EC2.
+Otherwise you can assign a DynamoDB role to EC2 instances.
+*/
+AWS.config.update({
+    "accessKeyId": "<Your_AWS_USER_ACCESS_KEY_ID>",
+    "secretAccessKey": "<YOUR_AWS_USER_SECRET_ACCESS_KEY>",
+    "region": "<AWS_REGION_CODE>"
+});
+var DynaDoc = require('dynadoc').setup(AWS);
+
+//DynaDoc is now ready to use everywhere it is required!
+DynaDoc.setGlobalOptions({
+    "TablePrefix": "GlobalTablePrefix-",
+    "UseTLSV1": true
+});
+/*
+Every DynaDoc client now will make a table/access a table with "GlobalTablePrefix-"
+as its prefix.
+
+UseTLSV1 will force DynamoDB Document client to connect to DynamoDB via TLSv1.
+This is the current patch for the common write ERPROTO when using aws-sdk with
+a node version other than 0.12.9 or 0.12.9
+*/
+```
+
+---
+## `removeGlobalOption(optionName)`
+
+Removes a global option from the DynaDoc item. Use this if you only want certain
+dynaClients to have a global option. Once a DynaClient is created, then the
+global options stay with that DynaClient for its entire life cycle (you cannot
+safely remove them). This funciton simply deletes the option from the Global
+DynaDoc options object.
+
+```javascript
+/**
+Remove a global option from DynaDoc.
+Return true if the option was found and removed.
+False if the option was not found.
+**/
+//Assuming we used the setup from the setGlobalOptions() method above.
+DynaDoc.removeGlobalOption("TablePrefix");
+//New DynaClients created will not use the TablePrefix.
+```
+
+---
+
+## `getGlobalOption(optionName)`
+
+Returns the value of the current global options passed in. Returns null if the
+options is not found.
+
+```javascript
+/**
+Returns the value of a global option given its name.
+**/
+//Assuming DynaDoc is setup properly.
+if (DynaDoc.getGlobalOption("UseTLSV1")) {
+    //If we are using TLSV1 then do something.
+    console.log('DynaDoc is using TLSv1 to limit ERPROTO errors.');
+}
+```
+
+---
+
+## `hasGlobalOption(optionName)`
+
+Returns true if DynaDoc has an option with the given name, false if the options is
+not found.
+
+```javascript
+/**
+Checks if DynaDoc has a global options set or not.
+Return true if the option exists and false otherwise.
+**/
+//Assuming DynaDoc is setup properly.
+if (DynaDoc.hasGlobalOption("TablePrefix")) {
+    //If we are using a table prefix then do something.
+    console.log('DynaDoc is using a table prefix. The prefix is: ' + DynaDoc.getGlobalOption("TablePrefix"));
+}
+```
+
 ## `createClient()`
+
+Creates a new DynaClient. This is the actual client that will make DynaDoc calls
+to DynamoDB table. It is recommended that you create a new client for each table
+you are interacting with.
 
 ```javascript
 /*
@@ -114,6 +221,12 @@ var tableDescription = Table1.describeTable('TableName');
 
 Smart Query is the first smart function of DynaDoc. smartQuery is fairly versitile and capable of handling a lot of different situations. SmartQuery returns a raw DynamoDB response. The items you have found would be under 'Items' key and the total number found is under the key of 'Count'.
 
+RangeValue is an option which supplies a RangeValue for the query. (If the index requires it).
+Action: Is the logic operator that will be applied to the RangeValue (Default is '=')
+  - Action: "= | < | > | <= | >=" (Any option for the KeyConditionExpression)
+
+  Check the DynamoDB Document Client for more options: http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
+
 
 Example Response:
 ```
@@ -152,7 +265,7 @@ var smartQueryResult = yield Table1.query(
     "GlobalHash",            //PrimaryHash Value         
     {                        //RangeValue, Action, and Additional options as defined by the AWS-SDK
         "RangeValue": "GlobalRangeValue", //PrimaryRange Value
-        "Action": "<",                     //Comparative action for the range value.
+        "Action": "<",                     //Comparative action for the range value. Defaults to "="
        "ReturnConsumedCapacity": "TOTAL",
        "ScanIndexForward": false,
        "Limit": 10
