@@ -238,7 +238,7 @@ describe('DyModel Test Suite', function() {
         it('Attempt to create Table 2 again using ignore parameter.', function(done) {
             expect(DynaDoc.getGlobalOption("TablePrefix")).to.be.equal(testData.TABLE_NAME2_PREFIX);
             //Since we don't actually create the table (at least it shouldn't).
-            DynaDoc.removeGlobalOption("UseTLS1");
+            DynaDoc.removeGlobalOption("UseTLSV1");
             var tempClient = DynaDoc.createClient(noPrefixTable2Name, testData.t2Schema, {ReadCapacityUnits: 1, WriteCapacityUnits: 1});
             tempClient.primaryIndex("CustomerID");
             tempClient.globalIndex(testData.t2GameIDIndexName, "gameID");
@@ -426,9 +426,13 @@ describe('DyModel Test Suite', function() {
             //enable streams for this table.
             dynaTable1.setDynamoStreams(false);
             dynaTable1.updateTable().then(function(res) {
-                //The table should now have streams disabled.
-                console.log('Streams disabled test result:');
-                console.log(JSON.stringify(res, null, 4));
+                /*
+                The table should now have streams disabled.
+                No real way to test this as the update table method
+                does not return if streams is enabled or disabled.
+                */
+                //console.log('Streams disabled test result:');
+                //console.log(JSON.stringify(res, null, 4));
                 done()
 
             }).catch(function(err) {
@@ -454,6 +458,31 @@ describe('DyModel Test Suite', function() {
     //Here we can run the actual tests. on the tables we made.
     describe("DynaDoc", function() {
         this.timeout(DEFAULT_TIMEOUT);
+
+        //Some diabolical testing
+        describe('#Diabolical DynaClients', function() {
+            it('Attempt to addFunction which already exists.', function() {
+                var badFunction = function() {
+                    //Does nothing, but it fills the requirements for add function.
+                };
+                expect(function() {dynaTable1.addFunction('query', badFunction)}).to.throw('addFunction(): Method name: query');
+
+                //Now try to overwrite a dyModel function.
+                expect(function() {dynaTable1.addFunction('primaryIndex', badFunction)}).to.throw('addFunction(): Method name: primaryIndex' );
+            });
+
+            it('Call between with too few arguments.', function() {
+                expect(function() {dynaTable1.between(dynaTable1.PRIMARY_INDEX_NAME)}).to.throw('between(): Not enough arguments');
+            });
+
+            it('Call between with a bad index.', function() {
+                expect(function() {dynaTable1.between('BADINDEX!')}).to.throw('between(): indexName does not exist');
+            });
+
+            it('Call query with a bad index.', function() {
+                expect(function() {dynaTable1.query('BADINDEX!', 'fakeValue')}).to.throw('query: indexName (BADINDEX!) does not exist');
+            });
+        });
         //Do a big batchwrite first to put all the data in the two tables.
 
         describe('#BatchWrite', function() {
@@ -1268,13 +1297,13 @@ describe('DyModel Test Suite', function() {
                 /*
                 batchGetKeyObject[table1Name] = [testData.generateNonExistentKeyObjectsTable1(1), testData.generateNonExistentKeyObjectsTable1(2)];
                 */
-                dynaTable1.batchGet(tableArray, batchGetKeyObject).then(function(result) {
+                expect(function() {dynaTable1.batchGet(tableArray, batchGetKeyObject).then(function(result) {
                     //This is the fail case.
                     done(new Error('DynaDoc BatchGet accepted invalid key data and did not throw an error'));
                 }, function(err) {
                     //Called because the response should fail.
                     done();
-                });
+                });}).to.throw('ValidationException');
 
             });
         });
