@@ -1,6 +1,6 @@
 {
   "name": "dynadoc",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "An easier and intelligent way to use DynamoDB.",
   "main": "dynadoc.js",
   "scripts": {
@@ -31,7 +31,7 @@
   "author": "Evan Boucher",
   "license": "CPAL-1.0",
   "engines": {
-    "node": ">= 4.0.0"
+    "node": ">= 4.2.6"
   },
   "directories": {
     "lib": "lib"
@@ -50,9 +50,9 @@
     "istanbul": "^0.4.0",
     "mocha": "^2.3.4",
     "mocha-lcov-reporter": "^1.0.0",
-    "aws-sdk": "^2.2.12"
+    "aws-sdk": "^2.2.34"
   },
   "peerDependencies": {
-    "aws-sdk": "^2.2.12"
+    "aws-sdk": "^2.2.34"
   }
 }

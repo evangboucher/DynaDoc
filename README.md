@@ -75,7 +75,7 @@ Table1.getItem({
     "<PrimaryRangeKey>": "<PrimaryRangeValue>"
 }).then(function (err, res) { console.log('Got response from getItem()');});
 
-//Using DynaDoc's smartQuery function. 
+//Using DynaDoc's smartQuery function.
 //Only the IndexesName and HashValue are required, other options can be left as undefined
 var response = yield Table1.query(
     '<IndexName>',
@@ -230,7 +230,7 @@ The current list of things that need to be done next.
 ### License ###
 Released under the terms of the CPAL-1.0 License. CPAL-1.0 is fairly similar to MPL-V2.0, but requires an additional attribution step.
 
-Add the following three lines to your applications UI/somewhere a user can see it. Thats all! Enjoy DynaDoc!
+Add the following three lines to your applications UI/somewhere a user can see it (IE. where your other licenses are). Thats all! Enjoy DynaDoc!
 
 ```
 DynaDoc powered by Mohu

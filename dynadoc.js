@@ -35,8 +35,9 @@ var Util = require(path.join(LIB_FOLDER, 'util'));
 var DynaClient = require(path.join(LIB_FOLDER, 'dynadoc-client'));
 //Require Joi so our users will not have too.
 var Joi = require('joi');
-//Not using const yet to better support older versions. Option Prefix.
-var OPTION_TABLE_PREFIX = "TablePrefix";
+
+const CONSTANTS = require(path.join(LIB_FOLDER, 'constants'));
+
 
 //Singleton factory constructor
 function DynaFactory() {
@@ -58,10 +59,17 @@ DynaFactory.prototype.setup = function setup(AWS) {
 A function for setting global options for DynaDoc. Options include:
 TablePrefix <String>: A table prefix string that is applied to every
      table created by any client made.
+UseTLS1 <Boolean>: [Default: false]: Boolean that determines if DynaDoc dynamoDB
+     document client will be created to minimize the affects of ERPROTO issue with
+     Node.js and DynamoDB. This option will be removed later once Node.js and
+     AWS has resolved the ERPROTO issue with using TLS version higher than 1.
 **/
 DynaFactory.prototype.setGlobalOptions = function setGlobalOptions(options) {
-    if (options.hasOwnProperty(OPTION_TABLE_PREFIX)) {
-        this.options[OPTION_TABLE_PREFIX] = options[OPTION_TABLE_PREFIX];
+    if (options.hasOwnProperty(CONSTANTS.OPTION_TABLE_PREFIX)) {
+        this.options[CONSTANTS.OPTION_TABLE_PREFIX] = options[CONSTANTS.OPTION_TABLE_PREFIX];
+    }
+    if (options.hasOwnProperty(CONSTANTS.OPTION_USE_TLS1)) {
+        this.options[CONSTANTS.OPTION_USE_TLS1] = options[CONSTANTS.OPTION_USE_TLS1];
     }
     return this;
 }
@@ -115,8 +123,12 @@ DynaFactory.prototype.createClient = function createClient(tableName, model, opt
         throw Util.createError('Setup method has not yet been called! Cannot create Client.');
     }
     //Append options.
-    if (this.hasGlobalOption(OPTION_TABLE_PREFIX)) {
-        tableName = this.getGlobalOption(OPTION_TABLE_PREFIX) + tableName;
+    if (this.hasGlobalOption(CONSTANTS.OPTION_TABLE_PREFIX)) {
+        tableName = this.getGlobalOption(CONSTANTS.OPTION_TABLE_PREFIX) + tableName;
+    }
+    if (this.hasGlobalOption(CONSTANTS.OPTION_USE_TLS1) && this.getGlobalOption(CONSTANTS.OPTION_USE_TLS1) === true) {
+        //We should set this to fix the ERPROTO issue with DynamoDB and OpenSSL
+        options[CONSTANTS.OPTION_USE_TLS1] = this.getGlobalOption(CONSTANTS.OPTION_USE_TLS1);
     }
 
     return new DynaClient(DynaFactory.AWS, tableName, model, options);
