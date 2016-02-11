@@ -1,6 +1,6 @@
 # DynaDoc API
 
-Below is the list of javascript API for DynaDoc. The API will primarily use comments from the source. This will also include an example of how it can be used.
+The API docs are primarily based on comments from the source. This guide also includes examples of API usage.
 
 
 - [`DynaDoc Functions`](#dynadoc-functions)
@@ -58,10 +58,10 @@ Below is the list of javascript API for DynaDoc. The API will primarily use comm
 
 ## `DynaDoc Functions`
 
-Easy functions are the heart of DynaDoc. They generate the payload and everything that is necessary to make a query to DynamoDB. In order to use these functions the describeTable() method must be finished first or you must setup the
+Easy functions are the heart of DynaDoc. DynaDoc generates the payload and everything that is necessary to make a query to DynamoDB. In order to use these functions, the describeTable() method must be called first or you must setup the
 a DyModel schema with Joi (Highly Recommended).
 
-Before using functions please make the following call as soon as you create a dynaClient or table. If you use DyModel's createTable() from a Joi schema then you will not need to call describeTable.
+Before using other DynaDoc functions, be sure to call `describeTable()`. If you use DyModel's createTable() from a Joi schema then you will not need to call `describeTable()`.
 
 ---
 
@@ -109,10 +109,10 @@ a node version other than 0.12.9 or 0.12.9
 ---
 ## `removeGlobalOption(optionName)`
 
-Removes a global option from the DynaDoc item. Use this if you only want certain
+Removes a global option from DynaDoc. Use this if you only want certain
 dynaClients to have a global option. Once a DynaClient is created, then the
 global options stay with that DynaClient for its entire life cycle (you cannot
-safely remove them). This funciton simply deletes the option from the Global
+safely remove them). This funciton removes deletes the option from the Global
 DynaDoc options object.
 
 ```javascript
@@ -131,7 +131,7 @@ DynaDoc.removeGlobalOption("TablePrefix");
 ## `getGlobalOption(optionName)`
 
 Returns the value of the current global options passed in. Returns null if the
-options is not found.
+option is not found.
 
 ```javascript
 /**
@@ -148,7 +148,7 @@ if (DynaDoc.getGlobalOption("UseTLSV1")) {
 
 ## `hasGlobalOption(optionName)`
 
-Returns true if DynaDoc has an option with the given name, false if the options is
+Returns `true` if DynaDoc has an option with the given name, `false` if the options is
 not found.
 
 ```javascript
@@ -316,15 +316,15 @@ Example Code:
 **/
 
 //A BETWEEN call to pull Range values between 0 and 10 inclusively and limit results to 5 documents.
-var response = yield Table1.between("CustomerID-Date-index","Test1", 0, 10);
+var response = yield Table1.between("CustomerID-Date-index","Test1", 0, 10, {Limit: 5);
 
 //The same call as above, but using the Primary Index for the current table.
-response = yield Table1.between(Table1.PrimaryIndexName,"Test1", 0, 10,{Limit: 5});
+response = yield Table1.between(Table1.PrimaryIndexName,"Test1", 0, 10, {Limit: 5});
 ```
 
 ## `batchGet(arrayOfTableNames, batchGetKeyObject, options)`
 
-BatchGet allows for multiple documents to be returned form an array of objects containing hash and range values. This call does not require Describe Table, but instead relies on you to pass an array of TableNames that are used to map each additional arrays of hash and range value objects to get.
+BatchGet allows for multiple documents to be returned from an array of objects containing hash and range values. This call does not require Describe Table, but instead relies on you to pass an array of TableNames that are used to map each additional arrays of hash and range value objects to get.
 
 
 Example Response:
