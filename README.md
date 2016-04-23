@@ -60,12 +60,18 @@ Table1.describeTable('<TABLE_NAME>').then(function(res) {
 Examples of using DynaDoc:
 ```javascript
 //Using the standard DynamoDB SDK DocumentClient, uses callbacks.
-Table1.dynamoDoc.get('<params>', function(err, res) {console.log(JSON.stringify(res, null, 4));});
+Table1.dynamoDoc.get('<params>',
+function(err, res) {
+    console.log(JSON.stringify(res, null, 4));
+});
 
 /*
 Using DynaDoc's Promisfied Enpoints.  
 */
-Table1.dynamoDoc.getAsync({<Params>}).then(function(res) {console.log('Got response from getAsync().')});
+Table1.dynamoDoc.getAsync({<Params>}).then(
+    function(res) {
+        console.log('Got response from getAsync().');
+});
 
 /*
 DynaDoc's getItem()KeyObject function.
@@ -73,10 +79,16 @@ DynaDoc's getItem()KeyObject function.
 Table1.getItem({
     "<PrimaryHashKey>": "<PrimaryHashValue>",
     "<PrimaryRangeKey>": "<PrimaryRangeValue>"
-}).then(function (err, res) { console.log('Got response from getItem()');});
+}).then(
+    function (err, res) {
+        console.log('Got response from getItem()');
+});
 
-//Using DynaDoc's smartQuery function.
-//Only the IndexesName and HashValue are required, other options can be left as undefined
+/*
+Using DynaDoc's query function.
+Only the IndexesName and HashValue are required, other options can
+be left as undefined
+*/
 var response = yield Table1.query(
     '<IndexName>',
     '<HashValue>',
@@ -114,17 +126,27 @@ var t1Schema = Joi.object().keys({
     })
 });
 
-//This creates a new DynaDoc Client that contains a model (15 and 13 are default table read and write throughput)
-var Table1 = DynaDoc.createClient("MyNewTable", t1Schema, {"ReadCapacityUnits": 15, "WriteCapacityUnits": 13});
+/*
+This creates a new DynaDoc Client that contains a model
+(15 and 13 are default table read and write throughput)
+*/
+var Table1 = DynaDoc.createClient("MyNewTable", t1Schema,
+    {
+        "ReadCapacityUnits": 15,
+        "WriteCapacityUnits": 13
+    }
+);
 
 /*
-For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
+For any schema, you must specify which key is the primary key and if
+there is a range key (leave out if no rang key).
 */
 Table1.primaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 
 /*
 This tells DynaDoc that the item GlobalSecondaryHash is a new Global Index.
-    Index Hash Name (from schema), Range Name, read, write, IndexName (As it will appear in DynamoDB)
+    Index Hash Name (from schema), Range Name, read, write, IndexName
+    (As it will appear in DynamoDB)
 */
 Table1.globalIndex("GlobalIndex-index",
   "GlobalSecondaryHash",
@@ -134,8 +156,11 @@ Table1.globalIndex("GlobalIndex-index",
     "WriteCapacityUnits": 7
   });
 
-//Create a local index (Always share primary Hash Key):
-Table1.localIndex("LocalSecondaryIndex", "LocalIndexRange-index");
+/*
+Create a local index (Always share primary Hash Key):
+Params(IndexName, SecondaryRangeKey, options);
+*/
+Table1.localIndex("LocalIndexRange-index", "LocalSecondaryIndex");
 
 /*
 Create the schema in the table. The param is a boolean to ignore and not create a new table if it already exists.
@@ -144,7 +169,17 @@ your responsibliity to ensure that the table is active (not in the creating stat
 calls to the DynamoDB table. DynaDoc provides a isTableActive() method that will return the status of
 the table as a boolean (True if active, false otherwise).
 */
-Table1.createTable(true); //Returns a promise with response from DynamoDB
+Table1.createTable(true).then(function(res) {
+    /*
+    DynamoDB is asynchronous and returns immediately.
+    You cannot use the table until it is completed,
+    which may take several minutes after this call.
+    IE. it is best to run DynaDoc, create your tables, manually wait,
+    and once the table is finished being created, you are
+    ready to use DynaDoc immediately.
+    */
+    console.log('Table Creation is started!');
+});
 ```
 
 ### What DynaDoc does for you! ###
