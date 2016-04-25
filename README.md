@@ -19,10 +19,10 @@ To instantiate it:
 var AWS = require('aws-sdk');
 
 /*
-Here you may need to include Secrete keys if running outside of EC2.
+Here you may need to include secret keys if running outside of EC2.
 Otherwise you can assign a DynamoDB role to EC2 instances.
 
-Example Config with keys (These keys are not valid. Replace with your valid keys):
+Example config with keys (These keys are not valid. Replace with your valid keys):
 
 */
 AWS.config.update({
@@ -59,11 +59,11 @@ Table1.describeTable('<TABLE_NAME>').then(function(res) {
 
 Examples of using DynaDoc:
 ```javascript
-//Using the standard DynamoDB SDK DocumentClient, uses callbacks.
+//Using the standard DynamoDB SDK DocumentClient uses callbacks.
 Table1.dynamoDoc.get('<params>', function(err, res) {console.log(JSON.stringify(res, null, 4));});
 
 /*
-Using DynaDoc's Promisfied Enpoints.  
+Using DynaDoc's promisfied functions.  
 */
 Table1.dynamoDoc.getAsync({<Params>}).then(function(res) {console.log('Got response from getAsync().')});
 
@@ -92,7 +92,7 @@ var response = yield Table1.query(
 
 ### Using DynaDoc's DyModel Feature ###
 
-DynaDoc supports models and schemas! This means that you can specify a specific DynaClient object with a model to represent a table. DynaDoc will then create the DynamoDB table based on that model and will then be able to validate items against that model. Creating models is helpful as it allows for dynamic adjustments for a DynamoDB table. Adjust the throughput, create new indexes, update index throughput, delete indexes, and/or remove old tables to build new ones! DynaDoc will help you do it!
+DynaDoc supports models and schemas! This means that you can specify a specific DynaClient object with a model to represent a table. DynaDoc will then create the DynamoDB table based on that model and will then be able to validate items against that model. Creating models is helpful as it allows for dynamic adjustments to a DynamoDB table. Adjust the throughput, create new indexes, update index throughput, delete indexes, and/or remove old tables to build new ones! DynaDoc will help you do it!
 
 Creating a model is easy!
 ```javascript
@@ -118,7 +118,7 @@ var t1Schema = Joi.object().keys({
 var Table1 = DynaDoc.createClient("MyNewTable", t1Schema, {"ReadCapacityUnits": 15, "WriteCapacityUnits": 13});
 
 /*
-For any schema, you must specify which key is the primary key and if there is a range key (leave out if no rang key).
+For any schema, you must specify which key is the primary key and if there is a range key (leave out if no range key).
 */
 Table1.primaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 
