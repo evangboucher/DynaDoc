@@ -19,7 +19,7 @@ To instantiate it:
 var AWS = require('aws-sdk');
 
 /*
-Here you may need to include Secrete keys if running outside of EC2.
+Here you may need to include secret keys if running outside of EC2.
 Otherwise you can assign a DynamoDB role to EC2 instances.
 
 Example Config with keys (These keys are not valid. Replace with your valid keys):
