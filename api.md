@@ -247,7 +247,7 @@ Example Code:
  tables.
 
  DevNote: To use SmartQuery on a Primary Index you should pass in the
-PrimaryIndexName to the method. IE. Table1.PrimaryIndexName //Is the name of the primary index.
+PRIMARY_INDEX_NAME to the method. IE. Table1.PRIMARY_INDEX_NAME //Is the name of the primary index.
 
  Requires: Smart functions to be enabled after the tableDescription or createTable() is filled out and called.
 
@@ -278,9 +278,9 @@ var response = yield Table1.query("GlobalSecondary-index","GlobalHash", {RangeVa
 response = yield Table1.query("LocalSecondaryIndex-index","PrimaryHashTest", {RangeValue: "SecondaryIndex"});
 
 /*
-A request on the 'PrimaryIndex'. Use the PrimaryIndexName value attached to the dynaClient.
+A request on the 'PrimaryIndex'. Use the PRIMARY_INDEX_NAME value attached to the dynaClient.
 */
-response = yield Table1.query(Table1.PrimaryIndexName,"PrimaryHashTest", {RangeValue: 1});
+response = yield Table1.query(Table1.PRIMARY_INDEX_NAME,"PrimaryHashTest", {RangeValue: 1});
 
 ```
 
@@ -319,7 +319,7 @@ Example Code:
 var response = yield Table1.between("CustomerID-Date-index","Test1", 0, 10, {Limit: 5);
 
 //The same call as above, but using the Primary Index for the current table.
-response = yield Table1.between(Table1.PrimaryIndexName,"Test1", 0, 10, {Limit: 5});
+response = yield Table1.between(Table1.PRIMARY_INDEX_NAME,"Test1", 0, 10, {Limit: 5});
 ```
 
 ## `batchGet(arrayOfTableNames, batchGetKeyObject, options)`
@@ -697,7 +697,8 @@ dynaTable1.primaryIndex("PrimaryHashKey", "PrimaryRangeKey");
 );
 
 //Create a local index (Always share primary Hash Key):
-dynaTable1.localIndex("LocalSecondaryIndex", "LocalIndexRange-index");
+//Params: IndexName, The Key Value to use for the range key in the model above.
+dynaTable1.localIndex("LocalIndexRange-index", "LocalSecondaryIndex");
 
 /*
 Create the schema in the table. The param is a boolean to ignore and not create a new table if it already exists.
@@ -754,18 +755,18 @@ Adds a global index for the given arguments to the tablePayload. If createTable(
 ```javascript
 /**
 Adds a global index to the table Payload.
+@param indexName (String; Optional): The name that you want to refer to this index as.
 @param hashKey (String): The name of your hashkey in your Joi model.
 @param rangeKey (String): The name of the range key in your Joi model (optional)
    Leave as Undefined if you do not want to specify a range Key
 @param readCapacity (Integer): Read throughput for DynamoDB index.
 @param writeCapacity (Integer): The write throughput for DynamoDB index.
-@param indexName (String; Optional): The name that you want to refer to this index as.
 @param options (Object; Optional): Additional options for this specific index. Options Include:
    - ProjectionType: KEYS_ONLY | INCLUDE | ALL
    - NonKeyAttributes: Array of Strings when Project is INCLUDE.
        Strings are the attribute names to project into the index.
 **/
-Table1.globalIndex("<MyGlobalHashKeyName>", "<MyGlobalRangeKeyName>", 10, 11, "<MyIndexName>", {"ProjectionType": "ALL");
+Table1.globalIndex("<MyIndexName>", "<MyGlobalHashKeyName>", "<MyGlobalRangeKeyName>", 10, 11, {"ProjectionType": "ALL");
 ```
 ---
 
@@ -830,7 +831,7 @@ index must be ensured before any local indexes.
    - NonKeyAttributes: Array of Strings when Project is INCLUDE.
        Strings are the attribute names to project into the index.
 **/
-Table1.localIndex("<MyRangeKeyName>", "<LocalIndexName>", {"ProjectType": "INCLUDE", "NonKeyAttributes":["timestamp"]);
+Table1.localIndex("<LocalIndexName>", "<MyRangeKeyName>", {"ProjectType": "INCLUDE", "NonKeyAttributes":["timestamp"]);
 ```
 ---
 
@@ -910,7 +911,9 @@ dynamoDB
 //This will enable streams with type of NEW_IMAGE
 Table1.setDynamoStreams(true, 'NEW_IMAGE');
 //You can call updateTable() immediately for the changes to take effect.
-Table1.updateTable();
+//DynamoDB update calls are asynchronous, you must use a table Active
+//to know when the table is done.
+Table1.updateTable().then(function(res){console.log('Successful, Update pending completion...')});
 ```
 
 ### `isTableActive()`
@@ -950,7 +953,17 @@ You can check this by catching the error and looking at the "code" property.
 @param ignoreAlreadyExist (Boolean): True if you want to ignore already exist errors, false otherwise.
 **/
 //Ignores already created errors.
-Table1.createTable(true);
+Table1.createTable(true).then(function(res) {
+    /*
+    DynamoDB is asynchronous and returns immediately.
+    You cannot use the table until it is completed,
+    which may take several minutes after this call.
+    IE. it is best to run DynaDoc, create your tables, manually wait,
+    and once the table is finished being created, you are
+    ready to use DynaDoc immediately.
+    */
+    console.log('Table Creation is started!');
+});
 ```
 ---
 
